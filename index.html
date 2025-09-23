@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Sistema de gestión de préstamos y pagos - Controla y gestiona todos tus préstamos de manera eficiente" />
+    <meta name="keywords" content="préstamos, pagos, finanzas, gestión, dinero, deudas" />
+    <meta name="author" content="Gestión de Préstamos App" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://prestamos-app.com/" />
+    <meta property="og:title" content="Gestión de Préstamos - Sistema de Control Financiero" />
+    <meta property="og:description" content="Controla y gestiona todos tus préstamos de manera eficiente con nuestro sistema integral" />
+    <meta property="og:image" content="/og-image.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://prestamos-app.com/" />
+    <meta property="twitter:title" content="Gestión de Préstamos - Sistema de Control Financiero" />
+    <meta property="twitter:description" content="Controla y gestiona todos tus préstamos de manera eficiente" />
+    <meta property="twitter:image" content="/twitter-image.png" />
+
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Préstamos App" />
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <title>Gestión de Préstamos - Sistema de Control Financiero</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <!-- Preloader -->
+    <div id="initial-loader" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f9fafb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    ">
+      <div style="text-align: center;">
+        <div style="
+          width: 48px;
+          height: 48px;
+          border: 4px solid #e5e7eb;
+          border-top: 4px solid #2563eb;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 16px;
+        "></div>
+        <p style="color: #6b7280; font-size: 14px;">Cargando aplicación...</p>
+      </div>
+    </div>
+
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      /* Ocultar el preloader cuando React cargue */
+      #root:not(:empty) + #initial-loader {
+        display: none;
+      }
+    </style>
+
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Remove preloader after a timeout as fallback -->
+    <script>
+      setTimeout(() => {
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.transition = 'opacity 0.3s ease';
+          setTimeout(() => loader.remove(), 300);
+        }
+      }, 3000);
+    </script>
+  </body>
+</html>
