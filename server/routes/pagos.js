@@ -1,8 +1,14 @@
 import express from 'express';
+import Joi from 'joi';
 import pagosController from '../controllers/pagosController.js';
 import { validate, validateParams, pagoSchema, paramsSchema } from '../middleware/validation.js';
 
 const router = express.Router();
+
+// Esquema de validación para personaId en parámetros
+const personaIdSchema = Joi.object({
+  personaId: Joi.number().integer().positive().required()
+});
 
 // GET /api/pagos/estadisticas/metodos - Debe ir antes de /:id
 router.get('/estadisticas/metodos', pagosController.obtenerEstadisticasPorMetodo);
@@ -12,7 +18,7 @@ router.get('/periodo', pagosController.obtenerPagosPorPeriodo);
 
 // GET /api/pagos/persona/:personaId/historial - Historial de pagos por persona
 router.get('/persona/:personaId/historial', 
-  validateParams(paramsSchema.id.rename('personaId', 'personaId')),
+  validateParams(personaIdSchema),
   pagosController.obtenerHistorialPersona
 );
 

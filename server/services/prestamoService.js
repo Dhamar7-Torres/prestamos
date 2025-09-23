@@ -3,55 +3,71 @@ import { MESSAGES } from '../utils/constants.js';
 import { parseDecimal } from '../utils/helpers.js';
 
 class PrestamoService {
-  async obtenerTodos(opciones = {}) {
-    const { 
-      page = 1, 
-      limit = 10, 
-      personaId, 
-      estado, 
-      completado,
-      ordenarPor = 'createdAt',
-      orden = 'desc'
-    } = opciones;
-    
-    const skip = (page - 1) * limit;
+async obtenerTodos(opciones = {}) {
+  const { 
+    page = 1, 
+    limit = 10, 
+    personaId, 
+    estado, 
+    completado,
+    ordenarPor = 'createdAt',
+    orden = 'desc'
+  } = opciones;
+  
+  // ✅ SOLUCIÓN DEFINITIVA: Manejo robusto de NaN
+  const pageInt = Math.max(1, parseInt(page) || 1);
+  const limitInt = Math.max(1, Math.min(parseInt(limit) || 10, 100));
+  const skip = (pageInt - 1) * limitInt;
 
-    const where = {
-      ...(personaId && { personaId: parseInt(personaId) }),
-      ...(estado && { estado }),
-      ...(completado !== undefined && { completado: completado === 'true' })
-    };
-
-    const [prestamos, total] = await Promise.all([
-      prisma.prestamo.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { [ordenarPor]: orden },
-        include: {
-          persona: {
-            select: {
-              id: true,
-              nombre: true,
-              apellido: true,
-              telefono: true,
-              email: true
-            }
-          },
-          pagos: {
-            orderBy: { fechaPago: 'desc' },
-            take: 5
-          },
-          _count: {
-            select: { pagos: true }
-          }
-        }
-      }),
-      prisma.prestamo.count({ where })
-    ]);
-
-    return { prestamos, total };
+  // ✅ Validación adicional para asegurar que no hay NaN
+  if (isNaN(pageInt) || isNaN(limitInt) || isNaN(skip)) {
+    throw new Error('Parámetros de paginación inválidos');
   }
+
+  console.log('✅ Parámetros validados:', { 
+    page: pageInt, 
+    limit: limitInt, 
+    skip,
+    originalPage: page,
+    originalLimit: limit 
+  });
+
+  const where = {
+    ...(personaId && { personaId: parseInt(personaId) }),
+    ...(estado && { estado }),
+    ...(completado !== undefined && { completado: completado === 'true' })
+  };
+
+  const [prestamos, total] = await Promise.all([
+    prisma.prestamo.findMany({
+      where,
+      skip: skip,          // ✅ Garantizado que es entero válido
+      take: limitInt,      // ✅ Garantizado que es entero válido
+      orderBy: { [ordenarPor]: orden },
+      include: {
+        persona: {
+          select: {
+            id: true,
+            nombre: true,
+            apellido: true,
+            telefono: true,
+            email: true
+          }
+        },
+        pagos: {
+          orderBy: { fechaPago: 'desc' },
+          take: 5
+        },
+        _count: {
+          select: { pagos: true }
+        }
+      }
+    }),
+    prisma.prestamo.count({ where })
+  ]);
+
+  return { prestamos, total };
+}
 
   async obtenerPorId(id) {
     const prestamo = await prisma.prestamo.findUnique({

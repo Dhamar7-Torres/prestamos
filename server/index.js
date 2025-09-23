@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createInterface } from 'readline';
 
 import corsConfig from './config/cors.js';
 import errorHandler from './middleware/errorHandler.js';
@@ -20,6 +21,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 // ====================================================
 // MIDDLEWARES DE SEGURIDAD
@@ -44,39 +46,50 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Rate limiting global
-const globalLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  message: {
-    success: false,
-    error: 'Demasiadas requests desde esta IP, intenta de nuevo más tarde.',
-    retryAfter: Math.ceil((parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000) / 1000)
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  handler: (req, res) => {
-    logError(
-      new Error(`Rate limit exceeded for IP: ${req.ip}`),
-      `Rate Limiting - ${req.method} ${req.originalUrl}`
-    );
-    res.status(429).json({
+// Rate limiting solo en producción
+if (!isDevelopment) {
+  console.log('✅ Rate limiting activado (producción)');
+  
+  // Rate limiting global
+  const globalLimiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutos
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+    message: {
       success: false,
-      message: 'Demasiadas requests desde esta IP, intenta de nuevo más tarde.',
+      error: 'Demasiadas requests desde esta IP, intenta de nuevo más tarde.',
       retryAfter: Math.ceil((parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000) / 1000)
-    });
-  }
-});
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      logError(
+        new Error(`Rate limit exceeded for IP: ${req.ip}`),
+        `Rate Limiting - ${req.method} ${req.originalUrl}`
+      );
+      res.status(429).json({
+        success: false,
+        message: 'Demasiadas requests desde esta IP, intenta de nuevo más tarde.',
+        retryAfter: Math.ceil((parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000) / 1000)
+      });
+    }
+  });
 
-// Aplicar rate limiting solo a rutas API
-app.use('/api/', globalLimiter);
+  // Aplicar rate limiting solo a rutas API
+  app.use('/api/', globalLimiter);
 
-// Rate limiting más estricto para operaciones sensibles
-const strictLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutos
-  max: 10, // máximo 10 requests por ventana
-  skipSuccessfulRequests: true
-});
+  // Rate limiting más estricto para operaciones sensibles
+  const strictLimiter = rateLimit({
+    windowMs: 5 * 60 * 1000, // 5 minutos
+    max: 10, // máximo 10 requests por ventana
+    skipSuccessfulRequests: true
+  });
+
+  // Aplicar rate limiting estricto a rutas específicas
+  app.use('/api/prestamos', strictLimiter);
+  app.use('/api/pagos', strictLimiter);
+} else {
+  console.log('⚠️  Rate limiting deshabilitado (desarrollo)');
+}
 
 // ====================================================
 // MIDDLEWARES GENERALES
@@ -108,7 +121,7 @@ app.use((req, res, next) => {
 });
 
 // Logging de requests en desarrollo
-if (process.env.NODE_ENV === 'development') {
+if (isDevelopment) {
   app.use((req, res, next) => {
     const timestamp = new Date().toISOString();
     const method = req.method;
@@ -152,6 +165,10 @@ app.get('/api/health', (req, res) => {
     },
     database: {
       status: 'connected' // Este estado se podría verificar dinámicamente
+    },
+    rateLimiting: {
+      enabled: !isDevelopment,
+      environment: isDevelopment ? 'development' : 'production'
     }
   };
 
@@ -160,10 +177,6 @@ app.get('/api/health', (req, res) => {
 
 // API Routes principales
 app.use('/api', routes);
-
-// Rutas con rate limiting estricto para operaciones críticas
-app.use('/api/prestamos', strictLimiter);
-app.use('/api/pagos', strictLimiter);
 
 // Endpoint para información de la API
 app.get('/api', (req, res) => {
@@ -272,6 +285,7 @@ const server = app.listen(PORT, () => {
 ║  Puerto:          ${PORT.toString().padEnd(47)} ║
 ║  Entorno:         ${(process.env.NODE_ENV || 'development').padEnd(47)} ║
 ║  PID:             ${process.pid.toString().padEnd(47)} ║
+║  Rate Limiting:   ${(isDevelopment ? 'DESHABILITADO' : 'HABILITADO').padEnd(47)} ║
 ║                                                                ║
 ║  URLs:                                                         ║
 ║    API:           http://localhost:${PORT}/api${' '.repeat(25)} ║
@@ -330,7 +344,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Manejar Ctrl+C en Windows
 if (process.platform === "win32") {
-  const rl = require("readline").createInterface({
+  const rl = createInterface({
     input: process.stdin,
     output: process.stdout
   });
