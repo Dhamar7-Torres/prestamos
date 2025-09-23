@@ -6,8 +6,20 @@ import Select from '@/components/common/Select';
 import Card from '@/components/common/Card';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import apiService from '@/services/api';
-import { usePersona } from '@/context/PersonaContext'; // ✅ AGREGAR ESTO
-import type { PersonaFormData, PrestamoFormData, Persona } from '@/types';
+import { usePersona } from '@/context/PersonaContext'; 
+import type { PrestamoFormData } from '@/types';
+import { Persona } from '@prisma/client';
+
+// Tipo específico para el formulario de persona SIN cedula
+interface PersonaFormDataSinCedula {
+  nombre: string;
+  apellido: string;
+  telefono: string;
+  email: string;
+  // Campos adicionales opcionales que NO incluyen cedula
+  direccion?: string;
+  notas?: string;
+}
 
 interface FormularioNuevoPrestamoProps {
   onSuccess: (prestamo: any) => void;
@@ -24,11 +36,11 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loadingPersonas, setLoadingPersonas] = useState(true);
 
-  // ✅ USAR CONTEXTO DE PERSONAS
+  // Usar contexto de personas
   const { crearPersona: crearPersonaEnContexto } = usePersona();
 
-  // Datos del formulario
-  const [personaData, setPersonaData] = useState<PersonaFormData>({
+  // Datos del formulario - SIN campo cedula
+  const [personaData, setPersonaData] = useState<PersonaFormDataSinCedula>({
     nombre: '',
     apellido: '',
     telefono: '',
@@ -46,19 +58,18 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [useExistingPersona, setUseExistingPersona] = useState(false);
 
-  // Cargar personas existentes con límite para evitar el error SQL
+  // Cargar personas existentes
   useEffect(() => {
     const cargarPersonas = async () => {
       try {
         setLoadingPersonas(true);
-        // Usar parámetros simples sin paginación compleja
         const response = await apiService.obtenerPersonas({ 
-          limit: 50  // Límite fijo menor
+          limit: 50
         });
         setPersonas(response.data.data || []);
       } catch (err) {
         console.error('Error cargando personas:', err);
-        setPersonas([]); // Fallback a array vacío
+        setPersonas([]);
       } finally {
         setLoadingPersonas(false);
       }
@@ -79,6 +90,28 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
     label: `${persona.nombre} ${persona.apellido || ''}`.trim()
   }));
 
+  // Validación personalizada SIN cedula
+  const validatePersonaData = (data: PersonaFormDataSinCedula): { isValid: boolean; errors: Record<string, string> } => {
+    const errors: Record<string, string> = {};
+
+    if (!data.nombre || data.nombre.trim().length < 2) {
+      errors.nombre = 'El nombre es requerido y debe tener al menos 2 caracteres';
+    }
+
+    if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      errors.email = 'El email no tiene un formato válido';
+    }
+
+    if (data.telefono && data.telefono.length > 0 && data.telefono.length < 7) {
+      errors.telefono = 'El teléfono debe tener al menos 7 dígitos';
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors
+    };
+  };
+
   const validateStep1 = (): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -87,7 +120,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
         newErrors.personaId = 'Debe seleccionar una persona';
       }
     } else {
-      const personaValidation = validatePersona(personaData);
+      const personaValidation = validatePersonaData(personaData);
       if (!personaValidation.isValid) {
         Object.assign(newErrors, personaValidation.errors);
       }
@@ -132,23 +165,34 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
     try {
       let personaId = prestamoData.personaId;
 
-      // ✅ CREAR PERSONA Y SINCRONIZAR CON CONTEXTO
+      // Crear persona si es necesario - SIN enviar campo cedula
       if (!useExistingPersona) {
+        // Preparar datos de persona sin cedula
+        const personaParaCrear = {
+          nombre: personaData.nombre.trim(),
+          apellido: personaData.apellido.trim() || undefined,
+          telefono: personaData.telefono.trim() || undefined,
+          email: personaData.email.trim() || undefined,
+          activo: true
+          // NO incluir cedula
+        };
+
+        console.log('🔍 Creando persona con datos:', personaParaCrear);
+
         // Crear en la base de datos
-        const responsePersona = await apiService.crearPersona(personaData);
+        const responsePersona = await apiService.crearPersona(personaParaCrear);
         personaId = responsePersona.data.id;
         
-        // ✅ ACTUALIZAR TAMBIÉN EL CONTEXTO DE PERSONAS
+        // Actualizar el contexto de personas
         try {
-          await crearPersonaEnContexto(personaData);
+          await crearPersonaEnContexto(personaParaCrear);
           console.log('✅ Persona sincronizada con contexto');
         } catch (contextError) {
           console.warn('⚠️ Error sincronizando persona con contexto:', contextError);
-          // No fallar el proceso principal si hay error en el contexto
         }
       }
 
-      // Crear préstamo con datos simplificados
+      // Crear préstamo
       const prestamoCompleto: PrestamoFormData = {
         personaId: personaId!,
         montoTotal: prestamoData.montoTotal!,
@@ -156,9 +200,12 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
         tipoPrestamo: prestamoData.tipoPrestamo || 'personal'
       };
 
+      console.log('🔍 Creando préstamo con datos:', prestamoCompleto);
+
       const responsePrestamo = await apiService.crearPrestamo(prestamoCompleto);
       onSuccess(responsePrestamo.data);
     } catch (err: any) {
+      console.error('❌ Error en handleSubmit:', err);
       setError(err.message || 'Error al crear el préstamo');
     } finally {
       setLoading(false);
@@ -214,7 +261,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
           />
         )}
 
-        {/* Step 1: Persona */}
+        {/* Step 1: Persona - SIN campo cedula */}
         {step === 1 && (
           <div className="space-y-6">
             <div className="flex items-center space-x-4 mb-6">
@@ -323,7 +370,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
           </div>
         )}
 
-        {/* Step 2: Préstamo - VERSIÓN SIMPLIFICADA */}
+        {/* Step 2: Préstamo */}
         {step === 2 && (
           <div className="space-y-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">

@@ -79,13 +79,6 @@ const PersonasPage: React.FC = () => {
               </div>
             )}
             
-            {personaSeleccionada.cedula && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Cédula</label>
-                <p className="mt-1 text-sm text-gray-900">{personaSeleccionada.cedula}</p>
-              </div>
-            )}
-            
             {personaSeleccionada.direccion && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700">Dirección</label>

@@ -9,7 +9,6 @@ import DetallePersona from '@/components/prestamos/DetallePersona';
 import FormularioNuevoPrestamo from '@/components/prestamos/FormularioNuevoPrestamo';
 import PersonasPage from './components/personas/PersonasPage';
 import { usePrestamo } from '@/context/PrestamoContext';
-import apiService from '@/services/api';
 import type { Prestamo } from '@/types';
 import { PersonaProvider } from '@/context/PersonaContext';
 
@@ -160,113 +159,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNuevoPrestamo, onVerPersonas })
   );
 };
 
-// Componente Vista Personas
-const VistaPersonas: React.FC = () => {
-  const [personas, setPersonas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  React.useEffect(() => {
-    const cargarPersonas = async () => {
-      try {
-        setLoading(true);
-        const response = await apiService.obtenerPersonas({ limit: 100 });
-        setPersonas(response.data.data || []);
-      } catch (error) {
-        console.error('Error cargando personas:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    cargarPersonas();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Cargando personas...</p>
-      </div>
-    );
-  }
-
-  if (personas.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-        </svg>
-        <h3 className="text-lg font-medium text-gray-500 mb-2">No hay personas registradas</h3>
-        <p className="text-gray-400">Las personas aparecerán aquí cuando crees préstamos</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Personas</h2>
-        <div className="text-sm text-gray-500">
-          Total: {personas.length} personas registradas
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {personas.map(persona => (
-          <div key={persona.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                <span className="text-primary-600 font-semibold text-lg">
-                  {persona.nombre.charAt(0)}{persona.apellido?.charAt(0) || ''}
-                </span>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {persona.nombre} {persona.apellido || ''}
-                </h3>
-                {persona.telefono && (
-                  <p className="text-sm text-gray-500 flex items-center mt-1">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    {persona.telefono}
-                  </p>
-                )}
-                {persona.email && (
-                  <p className="text-sm text-gray-500 flex items-center mt-1">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    {persona.email}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            {persona._count && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">{persona._count.prestamos}</span> préstamos registrados
-                </p>
-              </div>
-            )}
-
-            <div className="mt-4">
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                persona.activo 
-                  ? 'bg-success-100 text-success-800' 
-                  : 'bg-gray-100 text-gray-800'
-              }`}>
-                {persona.activo ? 'Activo' : 'Inactivo'}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 const AppContent: React.FC = () => {
   const [vistaActual, setVistaActual] = useState<string>('dashboard');
   const [prestamoSeleccionado, setPrestamoSeleccionado] = useState<Prestamo | null>(null);
@@ -368,8 +260,8 @@ const AppContent: React.FC = () => {
               </div>
             )}
 
-            {/* Header de la vista */}
-            {!mostrarFormularioNuevo && vistaActual !== 'detalle' && vistaActual !== 'dashboard' && (
+            {/* Header de la vista - SOLO para vistas que NO son dashboard o personas */}
+            {!mostrarFormularioNuevo && vistaActual !== 'detalle' && vistaActual !== 'dashboard' && vistaActual !== 'personas' && (
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">
@@ -428,7 +320,7 @@ const AppContent: React.FC = () => {
                 onPrestamoClick={handlePrestamoClick}
               />
             ) : vistaActual === 'personas' ? (
-              <VistaPersonas />
+              <PersonasPage />
             ) : (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">
