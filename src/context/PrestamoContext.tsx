@@ -219,41 +219,22 @@ export const PrestamoProvider: React.FC<PrestamoProviderProps> = ({ children }) 
 
   // Actions
   const actions: PrestamoActions = {
-    // Cargar préstamos
+    // Cargar préstamos - CORREGIDO PARA EVITAR BUCLE INFINITO
     cargarPrestamos: useCallback(async (parametros: Record<string, any> = {}) => {
       dispatch({ type: ActionTypes.SET_LOADING, payload: true });
       dispatch({ type: ActionTypes.CLEAR_ERROR });
 
       try {
-        // Crear params sin usar indexing dinámico
+        // Usar parámetros simples y estáticos para evitar bucles
         const params: Record<string, any> = {
-          page: state.paginacion.pagina,
-          limit: state.paginacion.limite,
-          ordenarPor: state.ordenamiento.campo,
-          orden: state.ordenamiento.direccion,
-          ...parametros
+          page: 1,
+          limit: 50, // Cargar más elementos de una vez
+          ordenarPor: 'createdAt',
+          orden: 'desc',
+          ...parametros // Los parámetros explícitos tienen prioridad
         };
 
-        // Agregar filtros específicos
-        if (state.filtros.completado !== undefined) {
-          params.completado = state.filtros.completado;
-        }
-        if (state.filtros.personaId) {
-          params.personaId = state.filtros.personaId;
-        }
-        if (state.filtros.estado) {
-          params.estado = state.filtros.estado;
-        }
-        if (state.filtros.busqueda) {
-          params.busqueda = state.filtros.busqueda;
-        }
-
-        // Limpiar filtros vacíos
-        Object.keys(params).forEach(key => {
-          if (params[key] === null || params[key] === '' || params[key] === undefined) {
-            delete params[key];
-          }
-        });
+        console.log('Cargando préstamos con parámetros:', params);
 
         const response = await apiService.obtenerPrestamos(params);
         
@@ -265,11 +246,12 @@ export const PrestamoProvider: React.FC<PrestamoProviderProps> = ({ children }) 
           }
         });
       } catch (error) {
+        console.error('Error en cargarPrestamos:', error);
         handleError(error, 'Error al cargar préstamos');
       } finally {
         dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       }
-    }, [state.paginacion, state.ordenamiento, state.filtros, handleError]),
+    }, [handleError]), // SOLO handleError como dependencia
 
     cargarEstadisticas: useCallback(async () => {
       try {

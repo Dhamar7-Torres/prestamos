@@ -46,8 +46,7 @@ export const requireRole = (...roles) => {
 
 // Middleware para verificar propiedad de recursos
 export const checkResourceOwnership = (req, res, next) => {
-  // Implementar lógica para verificar que el usuario puede acceder al recurso
-  // Por ejemplo, verificar que el préstamo pertenece al usuario autenticado
+
   
   if (!req.user) {
     return res.status(HTTP_STATUS.UNAUTHORIZED).json(
@@ -55,14 +54,11 @@ export const checkResourceOwnership = (req, res, next) => {
     );
   }
 
-  // Aquí se implementaría la lógica específica según el tipo de recurso
-  // Por ahora, permitir acceso completo para administradores
   if (req.user.role === 'admin') {
     return next();
   }
 
-  // Para usuarios regulares, verificar propiedad del recurso
-  // Esta lógica se implementaría según los requerimientos específicos
+
   next();
 };
 

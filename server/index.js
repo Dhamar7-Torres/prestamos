@@ -75,7 +75,7 @@ if (!isDevelopment) {
   });
 
   // Aplicar rate limiting solo a rutas API
-  app.use('/api/', globalLimiter);
+  //app.use('/api/', globalLimiter);
 
   // Rate limiting más estricto para operaciones sensibles
   const strictLimiter = rateLimit({
@@ -85,8 +85,8 @@ if (!isDevelopment) {
   });
 
   // Aplicar rate limiting estricto a rutas específicas
-  app.use('/api/prestamos', strictLimiter);
-  app.use('/api/pagos', strictLimiter);
+ // app.use('/api/prestamos', strictLimiter);
+ // app.use('/api/pagos', strictLimiter);
 } else {
   console.log('⚠️  Rate limiting deshabilitado (desarrollo)');
 }

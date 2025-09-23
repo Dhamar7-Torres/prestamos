@@ -8,47 +8,40 @@ datasource db {
 }
 
 model Persona {
-  id              Int        @id @default(autoincrement())
-  nombre          String     @db.VarChar(100)
-  apellido        String?    @db.VarChar(100)
-  telefono        String?    @db.VarChar(20)
-  email           String?    @db.VarChar(100)
-  direccion       String?
-  cedula          String?    @unique @db.VarChar(20)
-  fechaNacimiento DateTime?  @map("fecha_nacimiento") @db.Date
-  notas           String?
-  activo          Boolean    @default(true)
-  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt       DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  prestamos       Prestamo[]
+  id        Int        @id @default(autoincrement())
+  nombre    String     @db.VarChar(100)
+  apellido  String?    @db.VarChar(100)
+  telefono  String?    @db.VarChar(20)
+  email     String?    @db.VarChar(100)
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  prestamos Prestamo[]
 
   @@map("personas")
 }
 
 model Prestamo {
-  id               Int            @id @default(autoincrement())
-  personaId        Int            @map("persona_id")
-  montoTotal       Decimal        @map("monto_total") @db.Decimal(12, 2)
-  montoPagado      Decimal        @default(0) @map("monto_pagado") @db.Decimal(12, 2)
-  montoRestante    Decimal        @map("monto_restante") @db.Decimal(12, 2)
-  tasaInteres      Decimal        @default(0) @map("tasa_interes") @db.Decimal(5, 2)
-  tipoPrestamo     String         @default("personal") @map("tipo_prestamo") @db.VarChar(50)
-  estado           String         @default("activo") @db.VarChar(50)
-  descripcion      String?
-  fechaPrestamo    DateTime       @default(now()) @map("fecha_prestamo") @db.Timestamp(6)
-  fechaVencimiento DateTime?      @map("fecha_vencimiento") @db.Date
-  fechaCompletado  DateTime?      @map("fecha_completado") @db.Timestamp(6)
-  completado       Boolean        @default(false)
-  plazoDias        Int?           @map("plazo_dias")
-  cuotasPactadas   Int            @default(1) @map("cuotas_pactadas")
-  cuotasPagadas    Int            @default(0) @map("cuotas_pagadas")
-  interesGenerado  Decimal        @default(0) @map("interes_generado") @db.Decimal(10, 2)
-  moraAcumulada    Decimal        @default(0) @map("mora_acumulada") @db.Decimal(10, 2)
-  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt        DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  pagos            Pago[]
-  persona          Persona        @relation(fields: [personaId], references: [id], onDelete: Cascade)
-  recordatorios    Recordatorio[]
+  id              Int            @id @default(autoincrement())
+  personaId       Int            @map("persona_id")
+  montoTotal      Decimal        @map("monto_total") @db.Decimal(12, 2)
+  montoPagado     Decimal        @default(0) @map("monto_pagado") @db.Decimal(12, 2)
+  montoRestante   Decimal        @map("monto_restante") @db.Decimal(12, 2)
+  tasaInteres     Decimal        @default(0) @map("tasa_interes") @db.Decimal(5, 2)
+  tipoPrestamo    String         @default("personal") @map("tipo_prestamo") @db.VarChar(50)
+  estado          String         @default("activo") @db.VarChar(50)
+  fechaPrestamo   DateTime       @default(now()) @map("fecha_prestamo") @db.Timestamp(6)
+  fechaCompletado DateTime?      @map("fecha_completado") @db.Timestamp(6)
+  completado      Boolean        @default(false)
+  cuotasPactadas  Int            @default(1) @map("cuotas_pactadas")
+  cuotasPagadas   Int            @default(0) @map("cuotas_pagadas")
+  interesGenerado Decimal        @default(0) @map("interes_generado") @db.Decimal(10, 2)
+  moraAcumulada   Decimal        @default(0) @map("mora_acumulada") @db.Decimal(10, 2)
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  pagos           Pago[]
+  persona         Persona        @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  recordatorios   Recordatorio[]
 
   @@map("prestamos")
 }

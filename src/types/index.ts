@@ -2,16 +2,12 @@
 // TIPOS BASE
 // ====================================================
 
-export interface Persona {
+export interface Personas {
   id: number;
   nombre: string;
   apellido?: string;
   telefono?: string;
   email?: string;
-  direccion?: string;
-  cedula?: string;
-  fechaNacimiento?: string;
-  notas?: string;
   activo: boolean;
   createdAt: string;
   updatedAt: string;
@@ -131,10 +127,6 @@ export interface PersonaFormData {
   apellido?: string;
   telefono?: string;
   email?: string;
-  direccion?: string;
-  cedula?: string;
-  fechaNacimiento?: string;
-  notas?: string;
   activo?: boolean;
 }
 
@@ -145,6 +137,7 @@ export interface PrestamoFormData {
   tipoPrestamo?: TipoPrestamo;
   descripcion?: string;
   fechaVencimiento?: string;
+  fechaPrestamo?: string;
   plazoDias?: number;
   cuotasPactadas?: number;
 }
@@ -162,6 +155,23 @@ export interface PagoFormData {
   fechaProgramada?: string;
   esCuota?: boolean;
   numeroCuota?: number;
+}
+
+// En tu archivo de types
+interface Persona {
+  id: number;
+  nombre: string;
+  apellido?: string;
+  telefono?: string;
+  email?: string;
+  cedula?: string;
+  direccion?: string;
+  notas?: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    prestamos: number;
+  };
 }
 
 // ====================================================

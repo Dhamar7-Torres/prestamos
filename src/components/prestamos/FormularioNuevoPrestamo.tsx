@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { validatePersona, validatePrestamo } from '@/utils/validators';
-import { TIPOS_PRESTAMO } from '@/utils/constants';
+import { validatePersona } from '@/utils/validators';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
 import Select from '@/components/common/Select';
-import Textarea from '@/components/common/Textarea';
 import Card from '@/components/common/Card';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import apiService from '@/services/api';
+import { usePersona } from '@/context/PersonaContext'; // ✅ AGREGAR ESTO
 import type { PersonaFormData, PrestamoFormData, Persona } from '@/types';
 
 interface FormularioNuevoPrestamoProps {
@@ -25,15 +24,15 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loadingPersonas, setLoadingPersonas] = useState(true);
 
+  // ✅ USAR CONTEXTO DE PERSONAS
+  const { crearPersona: crearPersonaEnContexto } = usePersona();
+
   // Datos del formulario
   const [personaData, setPersonaData] = useState<PersonaFormData>({
     nombre: '',
     apellido: '',
     telefono: '',
-    email: '',
-    direccion: '',
-    cedula: '',
-    notas: ''
+    email: ''
   });
 
   const [prestamoData, setPrestamoData] = useState<Partial<PrestamoFormData>>({
@@ -41,24 +40,25 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
     montoTotal: undefined,
     tasaInteres: 0,
     tipoPrestamo: 'personal',
-    descripcion: '',
-    fechaVencimiento: '',
-    plazoDias: undefined,
-    cuotasPactadas: 1
+    fechaPrestamo: new Date().toISOString().split('T')[0]
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [useExistingPersona, setUseExistingPersona] = useState(false);
 
-  // Cargar personas existentes
+  // Cargar personas existentes con límite para evitar el error SQL
   useEffect(() => {
     const cargarPersonas = async () => {
       try {
         setLoadingPersonas(true);
-        const response = await apiService.obtenerPersonas({ limit: 100 });
+        // Usar parámetros simples sin paginación compleja
+        const response = await apiService.obtenerPersonas({ 
+          limit: 50  // Límite fijo menor
+        });
         setPersonas(response.data.data || []);
       } catch (err) {
         console.error('Error cargando personas:', err);
+        setPersonas([]); // Fallback a array vacío
       } finally {
         setLoadingPersonas(false);
       }
@@ -108,21 +108,6 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
       newErrors.tasaInteres = 'La tasa de interés debe estar entre 0% y 100%';
     }
 
-    if (prestamoData.fechaVencimiento) {
-      const fecha = new Date(prestamoData.fechaVencimiento);
-      if (fecha <= new Date()) {
-        newErrors.fechaVencimiento = 'La fecha de vencimiento debe ser futura';
-      }
-    }
-
-    if (prestamoData.plazoDias && prestamoData.plazoDias <= 0) {
-      newErrors.plazoDias = 'El plazo debe ser mayor a cero';
-    }
-
-    if (prestamoData.cuotasPactadas && prestamoData.cuotasPactadas <= 0) {
-      newErrors.cuotasPactadas = 'Las cuotas deben ser mayor a cero';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -147,22 +132,28 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
     try {
       let personaId = prestamoData.personaId;
 
-      // Crear persona si es necesario
+      // ✅ CREAR PERSONA Y SINCRONIZAR CON CONTEXTO
       if (!useExistingPersona) {
+        // Crear en la base de datos
         const responsePersona = await apiService.crearPersona(personaData);
         personaId = responsePersona.data.id;
+        
+        // ✅ ACTUALIZAR TAMBIÉN EL CONTEXTO DE PERSONAS
+        try {
+          await crearPersonaEnContexto(personaData);
+          console.log('✅ Persona sincronizada con contexto');
+        } catch (contextError) {
+          console.warn('⚠️ Error sincronizando persona con contexto:', contextError);
+          // No fallar el proceso principal si hay error en el contexto
+        }
       }
 
-      // Crear préstamo
+      // Crear préstamo con datos simplificados
       const prestamoCompleto: PrestamoFormData = {
         personaId: personaId!,
         montoTotal: prestamoData.montoTotal!,
-        tasaInteres: prestamoData.tasaInteres,
-        tipoPrestamo: prestamoData.tipoPrestamo,
-        descripcion: prestamoData.descripcion,
-        fechaVencimiento: prestamoData.fechaVencimiento,
-        plazoDias: prestamoData.plazoDias,
-        cuotasPactadas: prestamoData.cuotasPactadas
+        tasaInteres: prestamoData.tasaInteres || 0,
+        tipoPrestamo: prestamoData.tipoPrestamo || 'personal'
       };
 
       const responsePrestamo = await apiService.crearPrestamo(prestamoCompleto);
@@ -253,7 +244,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 options={personasOptions}
                 placeholder="Seleccione una persona..."
                 value={prestamoData.personaId || ''}
-                onChange={(e: { target: { value: any; }; }) => setPrestamoData({
+                onChange={(e) => setPrestamoData({
                   ...prestamoData,
                   personaId: Number(e.target.value)
                 })}
@@ -312,50 +303,6 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                   placeholder="juan@email.com"
                   fullWidth
                 />
-
-                <div className="md:col-span-2">
-                  <Input
-                    label="Cédula"
-                    value={personaData.cedula}
-                    onChange={(e) => setPersonaData({
-                      ...personaData,
-                      cedula: e.target.value
-                    })}
-                    error={errors.cedula}
-                    placeholder="1234567890"
-                    fullWidth
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Textarea
-                    label="Dirección"
-                    value={personaData.direccion}
-                    onChange={(e: { target: { value: any; }; }) => setPersonaData({
-                      ...personaData,
-                      direccion: e.target.value
-                    })}
-                    error={errors.direccion}
-                    placeholder="Dirección completa..."
-                    fullWidth
-                    rows={2}
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <Textarea
-                    label="Notas adicionales"
-                    value={personaData.notas}
-                    onChange={(e: { target: { value: any; }; }) => setPersonaData({
-                      ...personaData,
-                      notas: e.target.value
-                    })}
-                    error={errors.notas}
-                    placeholder="Información adicional sobre la persona..."
-                    fullWidth
-                    rows={3}
-                  />
-                </div>
               </div>
             )}
 
@@ -376,9 +323,13 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
           </div>
         )}
 
-        {/* Step 2: Préstamo */}
+        {/* Step 2: Préstamo - VERSIÓN SIMPLIFICADA */}
         {step === 2 && (
           <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Información del Préstamo
+            </h3>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 label="Monto Total *"
@@ -391,7 +342,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                   montoTotal: Number(e.target.value)
                 })}
                 error={errors.montoTotal}
-                placeholder="0.00"
+                placeholder="1000000.00"
                 fullWidth
               />
 
@@ -407,75 +358,34 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                   tasaInteres: Number(e.target.value)
                 })}
                 error={errors.tasaInteres}
-                placeholder="0.00"
+                placeholder="5.00"
+                helperText="Opcional: Deja en 0 si no aplica interés"
                 fullWidth
               />
 
               <Select
                 label="Tipo de Préstamo"
                 options={tiposPrestamoOptions}
-                value={prestamoData.tipoPrestamo || ''}
-                onChange={(e: { target: { value: any; }; }) => setPrestamoData({
+                value={prestamoData.tipoPrestamo || 'personal'}
+                onChange={(e) => setPrestamoData({
                   ...prestamoData,
                   tipoPrestamo: e.target.value as any
                 })}
-                error={errors.tipoPrestamo}
                 fullWidth
               />
 
               <Input
-                label="Fecha de Vencimiento"
+                label="Fecha de Entrega *"
                 type="date"
-                value={prestamoData.fechaVencimiento || ''}
+                value={prestamoData.fechaPrestamo || new Date().toISOString().split('T')[0]}
                 onChange={(e) => setPrestamoData({
                   ...prestamoData,
-                  fechaVencimiento: e.target.value
+                  fechaPrestamo: e.target.value
                 })}
-                error={errors.fechaVencimiento}
-                fullWidth
-              />
-
-              <Input
-                label="Plazo en Días"
-                type="number"
-                min="1"
-                value={prestamoData.plazoDias || ''}
-                onChange={(e) => setPrestamoData({
-                  ...prestamoData,
-                  plazoDias: Number(e.target.value)
-                })}
-                error={errors.plazoDias}
-                placeholder="30"
-                fullWidth
-              />
-
-              <Input
-                label="Cuotas Pactadas"
-                type="number"
-                min="1"
-                value={prestamoData.cuotasPactadas || ''}
-                onChange={(e) => setPrestamoData({
-                  ...prestamoData,
-                  cuotasPactadas: Number(e.target.value)
-                })}
-                error={errors.cuotasPactadas}
-                placeholder="1"
+                helperText="Fecha en que se entregó el dinero"
                 fullWidth
               />
             </div>
-
-            <Textarea
-              label="Descripción del Préstamo"
-              value={prestamoData.descripcion}
-              onChange={(e: { target: { value: any; }; }) => setPrestamoData({
-                ...prestamoData,
-                descripcion: e.target.value
-              })}
-              error={errors.descripcion}
-              placeholder="Motivo del préstamo, condiciones especiales, etc..."
-              fullWidth
-              rows={3}
-            />
 
             <div className="flex justify-between">
               <Button

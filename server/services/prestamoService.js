@@ -14,12 +14,11 @@ async obtenerTodos(opciones = {}) {
     orden = 'desc'
   } = opciones;
   
-  // ✅ SOLUCIÓN DEFINITIVA: Manejo robusto de NaN
+ 
   const pageInt = Math.max(1, parseInt(page) || 1);
   const limitInt = Math.max(1, Math.min(parseInt(limit) || 10, 100));
   const skip = (pageInt - 1) * limitInt;
 
-  // ✅ Validación adicional para asegurar que no hay NaN
   if (isNaN(pageInt) || isNaN(limitInt) || isNaN(skip)) {
     throw new Error('Parámetros de paginación inválidos');
   }
@@ -41,8 +40,8 @@ async obtenerTodos(opciones = {}) {
   const [prestamos, total] = await Promise.all([
     prisma.prestamo.findMany({
       where,
-      skip: skip,          // ✅ Garantizado que es entero válido
-      take: limitInt,      // ✅ Garantizado que es entero válido
+      skip: skip,          
+      take: limitInt,      
       orderBy: { [ordenarPor]: orden },
       include: {
         persona: {
