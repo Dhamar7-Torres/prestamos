@@ -49,6 +49,9 @@ class PagosController {
 
   // POST /api/pagos
   crear = asyncHandler(async (req, res) => {
+    console.log('🔍 Datos recibidos en controlador:', req.body);
+    
+    // El servicio se encarga de filtrar los campos válidos
     const resultado = await pagoService.crear(req.body);
 
     res.status(HTTP_STATUS.CREATED).json(
@@ -59,6 +62,10 @@ class PagosController {
   // PUT /api/pagos/:id
   actualizar = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    
+    console.log('🔍 Datos de actualización recibidos:', req.body);
+    
+    // El servicio se encarga de filtrar los campos válidos
     const pago = await pagoService.actualizar(parseInt(id), req.body);
 
     res.status(HTTP_STATUS.OK).json(

@@ -80,6 +80,24 @@ export interface Recordatorio {
   prestamo?: Prestamo;
 }
 
+// ✅ EXPORTAR la interface Persona que faltaba
+export interface Persona {
+  id: number;
+  nombre: string;
+  apellido?: string;
+  telefono?: string;
+  email?: string;
+  cedula?: string;
+  direccion?: string;
+  notas?: string;
+  activo?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    prestamos: number;
+  };
+}
+
 // ====================================================
 // ENUMS
 // ====================================================
@@ -149,29 +167,8 @@ export interface PagoFormData {
   montoInteres?: number;
   montoMora?: number;
   metodoPago?: MetodoPago;
-  numeroTransaccion?: string;
-  descripcion?: string;
-  comprobanteUrl?: string;
-  fechaProgramada?: string;
   esCuota?: boolean;
   numeroCuota?: number;
-}
-
-// En tu archivo de types
-interface Persona {
-  id: number;
-  nombre: string;
-  apellido?: string;
-  telefono?: string;
-  email?: string;
-  cedula?: string;
-  direccion?: string;
-  notas?: string;
-  createdAt: string;
-  updatedAt: string;
-  _count?: {
-    prestamos: number;
-  };
 }
 
 // ====================================================
@@ -206,16 +203,6 @@ export interface FiltrosPrestamos {
   completado?: boolean;
   personaId?: number;
   estado?: EstadoPrestamo;
-  busqueda?: string;
-  ordenarPor?: string;
-  orden?: 'asc' | 'desc';
-}
-
-// Y agregar esta interface al final:
-export interface FiltrosPrestamos {
-  completado?: boolean;
-  personaId?: number;
-  estado?: EstadoPrestamo; 
   busqueda?: string;
   ordenarPor?: string;
   orden?: 'asc' | 'desc';

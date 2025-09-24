@@ -47,23 +47,19 @@ model Prestamo {
 }
 
 model Pago {
-  id                Int       @id @default(autoincrement())
-  prestamoId        Int       @map("prestamo_id")
-  monto             Decimal   @db.Decimal(10, 2)
-  montoCapital      Decimal   @default(0) @map("monto_capital") @db.Decimal(10, 2)
-  montoInteres      Decimal   @default(0) @map("monto_interes") @db.Decimal(10, 2)
-  montoMora         Decimal   @default(0) @map("monto_mora") @db.Decimal(10, 2)
-  metodoPago        String    @default("efectivo") @map("metodo_pago") @db.VarChar(50)
-  numeroTransaccion String?   @map("numero_transaccion") @db.VarChar(50)
-  descripcion       String?
-  comprobanteUrl    String?   @map("comprobante_url")
-  fechaPago         DateTime  @default(now()) @map("fecha_pago") @db.Timestamp(6)
-  fechaProgramada   DateTime? @map("fecha_programada") @db.Date
-  esCuota           Boolean   @default(false) @map("es_cuota")
-  numeroCuota       Int?      @map("numero_cuota")
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
-  createdBy         String    @default("sistema") @map("created_by") @db.VarChar(50)
-  prestamo          Prestamo  @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+  id           Int      @id @default(autoincrement())
+  prestamoId   Int      @map("prestamo_id")
+  monto        Decimal  @db.Decimal(10, 2)
+  montoCapital Decimal  @default(0) @map("monto_capital") @db.Decimal(10, 2)
+  montoInteres Decimal  @default(0) @map("monto_interes") @db.Decimal(10, 2)
+  montoMora    Decimal  @default(0) @map("monto_mora") @db.Decimal(10, 2)
+  metodoPago   String   @default("efectivo") @map("metodo_pago") @db.VarChar(50)
+  fechaPago    DateTime @default(now()) @map("fecha_pago") @db.Timestamp(6)
+  esCuota      Boolean  @default(false) @map("es_cuota")
+  numeroCuota  Int?     @map("numero_cuota")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  createdBy    String   @default("sistema") @map("created_by") @db.VarChar(50)
+  prestamo     Prestamo @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
 
   @@map("pagos")
 }

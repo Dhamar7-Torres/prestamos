@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, ReactNode, useRef } from 'react';
 import apiService from '@/services/api';
 import { useApp } from './AppContext';
 import type { Persona, PersonaFormData } from '@/types';
@@ -194,6 +194,10 @@ interface PersonaProviderProps {
 export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(personaReducer, initialState);
   const { showSuccess, showError } = useApp();
+  
+  // ✅ SOLUCIÓN: Usar refs para evitar dependencias cambiantes
+  const loadingRef = useRef(false);
+  const lastParamsRef = useRef<string>('');
 
   // Helper para manejar errores
   const handleError = useCallback((error: any, defaultMessage: string = 'Error inesperado') => {
@@ -202,62 +206,82 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
     showError(message);
   }, [showError]);
 
+  // ✅ OPTIMIZACIÓN PRINCIPAL: Función sin dependencias del state
+  const cargarPersonas = useCallback(async (parametros: Record<string, any> = {}) => {
+    // Prevenir llamadas concurrentes
+    if (loadingRef.current) {
+      console.log('🚫 Llamada a cargarPersonas bloqueada - ya está cargando');
+      return;
+    }
+
+    // Crear parámetros con valores actuales del state
+    const currentState = state;
+    const pageParam = Math.max(1, parseInt(String(parametros.page || currentState.paginacion.pagina || 1)) || 1);
+    const limitParam = Math.max(1, Math.min(parseInt(String(parametros.limit || currentState.paginacion.limite || 20)) || 20, 100));
+    
+    const params: Record<string, any> = {
+      page: pageParam,
+      limit: limitParam,
+      ordenarPor: parametros.ordenarPor || currentState.ordenamiento.campo || 'createdAt',
+      orden: parametros.orden || currentState.ordenamiento.direccion || 'desc'
+    };
+
+    // Agregar filtros solo si tienen valores válidos
+    if (currentState.filtros.busqueda && currentState.filtros.busqueda.trim()) {
+      params.busqueda = currentState.filtros.busqueda.trim();
+    }
+    if (currentState.filtros.conPrestamos !== undefined) {
+      params.conPrestamos = currentState.filtros.conPrestamos;
+    }
+
+    // Agregar parámetros adicionales validados
+    Object.keys(parametros).forEach(key => {
+      if (key !== 'page' && key !== 'limit' && key !== 'ordenarPor' && key !== 'orden') {
+        const valor = parametros[key];
+        if (valor !== null && valor !== undefined && valor !== '') {
+          params[key] = valor;
+        }
+      }
+    });
+
+    // ✅ CACHE: Evitar llamadas duplicadas con los mismos parámetros
+    const paramsString = JSON.stringify(params);
+    if (lastParamsRef.current === paramsString) {
+      console.log('🚫 Llamada duplicada evitada:', params);
+      return;
+    }
+
+    loadingRef.current = true;
+    lastParamsRef.current = paramsString;
+    
+    dispatch({ type: ActionTypes.SET_LOADING, payload: true });
+    dispatch({ type: ActionTypes.CLEAR_ERROR });
+
+    try {
+      console.log('✅ Cargando personas con parámetros:', params);
+      const response = await apiService.obtenerPersonas(params);
+      
+      dispatch({ 
+        type: ActionTypes.SET_PERSONAS, 
+        payload: {
+          personas: response.data.data || [],
+          total: response.data.pagination?.total || 0
+        }
+      });
+    } catch (error) {
+      console.error('❌ Error en cargarPersonas:', error);
+      handleError(error, 'Error al cargar personas');
+      // Resetear cache en caso de error
+      lastParamsRef.current = '';
+    } finally {
+      loadingRef.current = false;
+      dispatch({ type: ActionTypes.SET_LOADING, payload: false });
+    }
+  }, [handleError]); // ✅ SOLO handleError como dependencia
+
   // Actions
   const actions: PersonaActions = {
-    // Cargar personas
-    cargarPersonas: useCallback(async (parametros: Record<string, any> = {}) => {
-      dispatch({ type: ActionTypes.SET_LOADING, payload: true });
-      dispatch({ type: ActionTypes.CLEAR_ERROR });
-
-      try {
-        // VALIDACIÓN ROBUSTA DE PARÁMETROS
-        const pageParam = Math.max(1, parseInt(String(parametros.page || state.paginacion.pagina || 1)) || 1);
-        const limitParam = Math.max(1, Math.min(parseInt(String(parametros.limit || state.paginacion.limite || 20)) || 20, 100));
-        
-        // Crear params validados
-        const params: Record<string, any> = {
-          page: pageParam,
-          limit: limitParam,
-          ordenarPor: parametros.ordenarPor || state.ordenamiento.campo || 'createdAt',
-          orden: parametros.orden || state.ordenamiento.direccion || 'desc'
-        };
-
-        // Agregar filtros solo si tienen valores válidos
-        if (state.filtros.busqueda && state.filtros.busqueda.trim()) {
-          params.busqueda = state.filtros.busqueda.trim();
-        }
-        if (state.filtros.conPrestamos !== undefined) {
-          params.conPrestamos = state.filtros.conPrestamos;
-        }
-
-        // Agregar parámetros adicionales validados
-        Object.keys(parametros).forEach(key => {
-          if (key !== 'page' && key !== 'limit' && key !== 'ordenarPor' && key !== 'orden') {
-            const valor = parametros[key];
-            if (valor !== null && valor !== undefined && valor !== '') {
-              params[key] = valor;
-            }
-          }
-        });
-
-        console.log('Parámetros para API personas:', params);
-
-        const response = await apiService.obtenerPersonas(params);
-        
-        dispatch({ 
-          type: ActionTypes.SET_PERSONAS, 
-          payload: {
-            personas: response.data.data || [],
-            total: response.data.pagination?.total || 0
-          }
-        });
-      } catch (error) {
-        console.error('Error en cargarPersonas:', error);
-        handleError(error, 'Error al cargar personas');
-      } finally {
-        dispatch({ type: ActionTypes.SET_LOADING, payload: false });
-      }
-    }, [state.paginacion, state.ordenamiento, state.filtros, handleError]),
+    cargarPersonas,
 
     obtenerPersona: useCallback(async (id: number) => {
       dispatch({ type: ActionTypes.SET_LOADING, payload: true });
@@ -283,6 +307,10 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
         const response = await apiService.crearPersona(data);
         dispatch({ type: ActionTypes.ADD_PERSONA, payload: response.data });
         showSuccess('Persona creada exitosamente');
+        
+        // ✅ Limpiar cache para recargar datos
+        lastParamsRef.current = '';
+        
         return response.data;
       } catch (error) {
         handleError(error, 'Error al crear persona');
@@ -317,6 +345,10 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
         await apiService.eliminarPersona(id);
         dispatch({ type: ActionTypes.REMOVE_PERSONA, payload: id });
         showSuccess('Persona eliminada exitosamente');
+        
+        // ✅ Limpiar cache para recargar datos
+        lastParamsRef.current = '';
+        
       } catch (error) {
         handleError(error, 'Error al eliminar persona');
         throw error;
@@ -327,14 +359,20 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
 
     setFiltros: useCallback((filtros: Partial<FiltrosPersona>) => {
       dispatch({ type: ActionTypes.SET_FILTROS, payload: filtros });
+      // ✅ Limpiar cache cuando cambian los filtros
+      lastParamsRef.current = '';
     }, []),
 
     clearFiltros: useCallback(() => {
       dispatch({ type: ActionTypes.CLEAR_FILTROS });
+      // ✅ Limpiar cache cuando se limpian los filtros
+      lastParamsRef.current = '';
     }, []),
 
     setPaginacion: useCallback((paginacion: Partial<PersonaState['paginacion']>) => {
       dispatch({ type: ActionTypes.SET_PAGINACION, payload: paginacion });
+      // ✅ Limpiar cache cuando cambia la paginación
+      lastParamsRef.current = '';
     }, []),
 
     setOrdenamiento: useCallback((campo: string, direccion: 'asc' | 'desc') => {
@@ -342,6 +380,8 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
         type: ActionTypes.SET_ORDENAMIENTO, 
         payload: { campo, direccion } 
       });
+      // ✅ Limpiar cache cuando cambia el ordenamiento
+      lastParamsRef.current = '';
     }, []),
 
     clearError: useCallback(() => {

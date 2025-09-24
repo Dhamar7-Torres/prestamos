@@ -4,6 +4,21 @@ import { parseDecimal } from '../utils/helpers.js';
 import prestamoService from './prestamoService.js';
 
 class PagoService {
+  // Filtrar campos válidos para el modelo Pago
+  #filtrarCamposPago(data) {
+    return {
+      prestamoId: data.prestamoId,
+      monto: parseDecimal(data.monto),
+      montoCapital: parseDecimal(data.montoCapital || 0),
+      montoInteres: parseDecimal(data.montoInteres || 0),
+      montoMora: parseDecimal(data.montoMora || 0),
+      metodoPago: data.metodoPago || 'efectivo',
+      esCuota: Boolean(data.esCuota),
+      numeroCuota: data.numeroCuota ? parseInt(data.numeroCuota) : null,
+      // NO incluir numeroTransaccion ni descripcion
+    };
+  }
+
   async obtenerTodos(opciones = {}) {
     const { 
       page = 1, 
@@ -104,12 +119,14 @@ class PagoService {
         throw new Error(MESSAGES.PRESTAMO.PAYMENT_EXCEEDS_DEBT);
       }
 
-      // Crear el pago
+      // Filtrar datos antes de crear el pago
+      const datosPago = this.#filtrarCamposPago(data);
+      
+      console.log('🔍 Datos filtrados para Prisma:', datosPago);
+
+      // Crear el pago con datos filtrados
       const pago = await tx.pago.create({
-        data: {
-          ...data,
-          monto: montoPago
-        },
+        data: datosPago,
         include: {
           prestamo: {
             include: {
@@ -156,10 +173,15 @@ class PagoService {
         throw new Error('Pago no encontrado');
       }
 
+      // Filtrar datos para actualización
+      const datosActualizacion = this.#filtrarCamposPago(data);
+      
+      console.log('🔍 Datos de actualización filtrados:', datosActualizacion);
+
       // Actualizar el pago
       const pagoActualizado = await tx.pago.update({
         where: { id },
-        data,
+        data: datosActualizacion,
         include: {
           prestamo: {
             include: {

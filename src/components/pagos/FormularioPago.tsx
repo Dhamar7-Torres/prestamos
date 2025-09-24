@@ -5,7 +5,6 @@ import { METODOS_PAGO } from '@/utils/constants';
 import Button from '@/components/common/Button';
 import Input from '@/components/common/Input';
 import Select from '@/components/common/Select';
-import Textarea from '@/components/common/Textarea';
 import Card from '@/components/common/Card';
 import ErrorMessage from '@/components/common/ErrorMessage';
 import type { Prestamo, PagoFormData, MetodoPago } from '@/types';
@@ -27,8 +26,6 @@ const FormularioPago: React.FC<FormularioPagoProps> = ({
     montoInteres: 0,
     montoMora: 0,
     metodoPago: 'efectivo',
-    numeroTransaccion: '',
-    descripcion: '',
     esCuota: false,
     numeroCuota: undefined
   });
@@ -198,7 +195,7 @@ const FormularioPago: React.FC<FormularioPagoProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
           <Select
             label="Método de Pago"
             options={metodosOptions}
@@ -208,18 +205,6 @@ const FormularioPago: React.FC<FormularioPagoProps> = ({
               metodoPago: e.target.value as MetodoPago
             })}
             error={errors.metodoPago}
-            fullWidth
-          />
-
-          <Input
-            label="Número de Transacción"
-            value={formData.numeroTransaccion || ''}
-            onChange={(e) => setFormData({
-              ...formData,
-              numeroTransaccion: e.target.value
-            })}
-            error={errors.numeroTransaccion}
-            placeholder="Referencia o número"
             fullWidth
           />
         </div>
@@ -305,19 +290,6 @@ const FormularioPago: React.FC<FormularioPagoProps> = ({
             />
           )}
         </div>
-
-        <Textarea
-          label="Descripción (opcional)"
-          value={formData.descripcion || ''}
-          onChange={(e) => setFormData({
-            ...formData,
-            descripcion: e.target.value
-          })}
-          error={errors.descripcion}
-          placeholder="Concepto del pago, observaciones..."
-          fullWidth
-          rows={3}
-        />
 
         <div className="flex space-x-4">
           <Button
