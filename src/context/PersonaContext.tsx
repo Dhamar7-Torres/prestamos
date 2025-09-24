@@ -84,16 +84,26 @@ const personaReducer = (state: PersonaState, action: PersonaAction): PersonaStat
       return { ...state, error: null };
       
     case ActionTypes.SET_PERSONAS:
+      // ✅ DEDUPLICACIÓN: Asegurar personas únicas por ID
+      const personasUnicas = action.payload.personas.filter((persona: Persona, index: number, self: Persona[]) => 
+        self.findIndex(p => p.id === persona.id) === index
+      );
+      
       return { 
         ...state, 
-        personas: action.payload.personas,
+        personas: personasUnicas,
         paginacion: { 
           ...state.paginacion, 
-          total: action.payload.total || action.payload.personas.length 
+          total: action.payload.total || personasUnicas.length 
         }
       };
       
     case ActionTypes.ADD_PERSONA:
+      // ✅ EVITAR DUPLICADOS al agregar
+      const existePersona = state.personas.find(p => p.id === action.payload.id);
+      if (existePersona) {
+        return state;
+      }
       return { 
         ...state, 
         personas: [action.payload, ...state.personas] 
@@ -161,7 +171,7 @@ const personaReducer = (state: PersonaState, action: PersonaAction): PersonaStat
 
 // Actions interface
 interface PersonaActions {
-  cargarPersonas: (parametros?: Record<string, any>) => Promise<void>;
+  cargarPersonas: () => Promise<void>;
   obtenerPersona: (id: number) => Promise<any>;
   crearPersona: (data: PersonaFormData) => Promise<any>;
   actualizarPersona: (id: number, data: Partial<PersonaFormData>) => Promise<any>;
@@ -195,9 +205,9 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
   const [state, dispatch] = useReducer(personaReducer, initialState);
   const { showSuccess, showError } = useApp();
   
-  // ✅ SOLUCIÓN: Usar refs para evitar dependencias cambiantes
-  const loadingRef = useRef(false);
-  const lastParamsRef = useRef<string>('');
+  // ✅ Control de carga para evitar llamadas concurrentes
+  const isLoadingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Helper para manejar errores
   const handleError = useCallback((error: any, defaultMessage: string = 'Error inesperado') => {
@@ -206,78 +216,72 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
     showError(message);
   }, [showError]);
 
-  // ✅ OPTIMIZACIÓN PRINCIPAL: Función sin dependencias del state
-  const cargarPersonas = useCallback(async (parametros: Record<string, any> = {}) => {
+  // ✅ SOLUCIÓN DEFINITIVA: Función simplificada sin dependencias problemáticas
+  const cargarPersonas = useCallback(async () => {
     // Prevenir llamadas concurrentes
-    if (loadingRef.current) {
-      console.log('🚫 Llamada a cargarPersonas bloqueada - ya está cargando');
+    if (isLoadingRef.current) {
+      console.log('⚠️ Llamada a cargarPersonas bloqueada - ya está cargando');
       return;
     }
 
-    // Crear parámetros con valores actuales del state
-    const currentState = state;
-    const pageParam = Math.max(1, parseInt(String(parametros.page || currentState.paginacion.pagina || 1)) || 1);
-    const limitParam = Math.max(1, Math.min(parseInt(String(parametros.limit || currentState.paginacion.limite || 20)) || 20, 100));
-    
-    const params: Record<string, any> = {
-      page: pageParam,
-      limit: limitParam,
-      ordenarPor: parametros.ordenarPor || currentState.ordenamiento.campo || 'createdAt',
-      orden: parametros.orden || currentState.ordenamiento.direccion || 'desc'
-    };
-
-    // Agregar filtros solo si tienen valores válidos
-    if (currentState.filtros.busqueda && currentState.filtros.busqueda.trim()) {
-      params.busqueda = currentState.filtros.busqueda.trim();
-    }
-    if (currentState.filtros.conPrestamos !== undefined) {
-      params.conPrestamos = currentState.filtros.conPrestamos;
+    // Cancelar llamada anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
-    // Agregar parámetros adicionales validados
-    Object.keys(parametros).forEach(key => {
-      if (key !== 'page' && key !== 'limit' && key !== 'ordenarPor' && key !== 'orden') {
-        const valor = parametros[key];
-        if (valor !== null && valor !== undefined && valor !== '') {
-          params[key] = valor;
-        }
-      }
-    });
-
-    // ✅ CACHE: Evitar llamadas duplicadas con los mismos parámetros
-    const paramsString = JSON.stringify(params);
-    if (lastParamsRef.current === paramsString) {
-      console.log('🚫 Llamada duplicada evitada:', params);
-      return;
-    }
-
-    loadingRef.current = true;
-    lastParamsRef.current = paramsString;
+    isLoadingRef.current = true;
+    abortControllerRef.current = new AbortController();
     
     dispatch({ type: ActionTypes.SET_LOADING, payload: true });
     dispatch({ type: ActionTypes.CLEAR_ERROR });
 
     try {
-      console.log('✅ Cargando personas con parámetros:', params);
-      const response = await apiService.obtenerPersonas(params);
+      console.log('✅ Cargando todas las personas...');
+      
+      // Llamada simplificada - obtener TODAS las personas sin filtros complejos
+      const response = await apiService.obtenerPersonas({
+        page: 1,
+        limit: 1000, // Obtener muchas personas de una vez
+        ordenarPor: 'nombre',
+        orden: 'asc'
+      });
+      
+      const personas = response.data.data || [];
+      const total = response.data.pagination?.total || personas.length;
+
+      console.log(`📊 Personas recibidas: ${personas.length}, Total: ${total}`);
+      
+      // Verificación adicional de duplicados en el cliente
+      const personasUnicas = personas.filter((persona: Persona, index: number, self: Persona[]) => 
+        self.findIndex(p => p.id === persona.id) === index
+      );
+
+      if (personasUnicas.length !== personas.length) {
+        console.warn(`⚠️ Se encontraron ${personas.length - personasUnicas.length} duplicados eliminados`);
+      }
       
       dispatch({ 
         type: ActionTypes.SET_PERSONAS, 
         payload: {
-          personas: response.data.data || [],
-          total: response.data.pagination?.total || 0
+          personas: personasUnicas,
+          total
         }
       });
-    } catch (error) {
+
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('🚫 Llamada cancelada');
+        return;
+      }
+      
       console.error('❌ Error en cargarPersonas:', error);
       handleError(error, 'Error al cargar personas');
-      // Resetear cache en caso de error
-      lastParamsRef.current = '';
     } finally {
-      loadingRef.current = false;
+      isLoadingRef.current = false;
+      abortControllerRef.current = null;
       dispatch({ type: ActionTypes.SET_LOADING, payload: false });
     }
-  }, [handleError]); // ✅ SOLO handleError como dependencia
+  }, [handleError]); // ✅ Solo handleError como dependencia
 
   // Actions
   const actions: PersonaActions = {
@@ -308,8 +312,10 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
         dispatch({ type: ActionTypes.ADD_PERSONA, payload: response.data });
         showSuccess('Persona creada exitosamente');
         
-        // ✅ Limpiar cache para recargar datos
-        lastParamsRef.current = '';
+        // Recargar lista para asegurar consistencia
+        setTimeout(() => {
+          cargarPersonas();
+        }, 100);
         
         return response.data;
       } catch (error) {
@@ -318,7 +324,7 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
       } finally {
         dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       }
-    }, [handleError, showSuccess]),
+    }, [handleError, showSuccess, cargarPersonas]),
 
     actualizarPersona: useCallback(async (id: number, data: Partial<PersonaFormData>) => {
       dispatch({ type: ActionTypes.SET_LOADING, payload: true });
@@ -346,8 +352,10 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
         dispatch({ type: ActionTypes.REMOVE_PERSONA, payload: id });
         showSuccess('Persona eliminada exitosamente');
         
-        // ✅ Limpiar cache para recargar datos
-        lastParamsRef.current = '';
+        // Recargar para asegurar consistencia
+        setTimeout(() => {
+          cargarPersonas();
+        }, 100);
         
       } catch (error) {
         handleError(error, 'Error al eliminar persona');
@@ -355,24 +363,18 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
       } finally {
         dispatch({ type: ActionTypes.SET_LOADING, payload: false });
       }
-    }, [handleError, showSuccess]),
+    }, [handleError, showSuccess, cargarPersonas]),
 
     setFiltros: useCallback((filtros: Partial<FiltrosPersona>) => {
       dispatch({ type: ActionTypes.SET_FILTROS, payload: filtros });
-      // ✅ Limpiar cache cuando cambian los filtros
-      lastParamsRef.current = '';
     }, []),
 
     clearFiltros: useCallback(() => {
       dispatch({ type: ActionTypes.CLEAR_FILTROS });
-      // ✅ Limpiar cache cuando se limpian los filtros
-      lastParamsRef.current = '';
     }, []),
 
     setPaginacion: useCallback((paginacion: Partial<PersonaState['paginacion']>) => {
       dispatch({ type: ActionTypes.SET_PAGINACION, payload: paginacion });
-      // ✅ Limpiar cache cuando cambia la paginación
-      lastParamsRef.current = '';
     }, []),
 
     setOrdenamiento: useCallback((campo: string, direccion: 'asc' | 'desc') => {
@@ -380,8 +382,6 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
         type: ActionTypes.SET_ORDENAMIENTO, 
         payload: { campo, direccion } 
       });
-      // ✅ Limpiar cache cuando cambia el ordenamiento
-      lastParamsRef.current = '';
     }, []),
 
     clearError: useCallback(() => {
@@ -393,11 +393,15 @@ export const PersonaProvider: React.FC<PersonaProviderProps> = ({ children }) =>
     }, [])
   };
 
-  // Computed values
+  // Computed values con deduplicación adicional por seguridad
   const computed: PersonaComputed = {
     totalPersonas: state.personas.length,
-    personasConPrestamos: state.personas.filter(p => p._count && p._count.prestamos > 0),
-    personasSinPrestamos: state.personas.filter(p => !p._count || p._count.prestamos === 0)
+    personasConPrestamos: state.personas.filter((p, index, self) => 
+      self.findIndex(person => person.id === p.id) === index && p._count && p._count.prestamos > 0
+    ),
+    personasSinPrestamos: state.personas.filter((p, index, self) => 
+      self.findIndex(person => person.id === p.id) === index && (!p._count || p._count.prestamos === 0)
+    )
   };
 
   const value: PersonaContextType = {

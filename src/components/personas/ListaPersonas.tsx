@@ -81,18 +81,25 @@ const ListaPersonas: React.FC<ListaPersonasProps> = ({
 
   if (loading && personas.length === 0) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-primary-600 mx-auto mb-6"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 to-purple-500 relative overflow-hidden p-8">
+        {/* Efectos de fondo */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-300/20 to-blue-500/20"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 flex items-center justify-center h-96">
+          <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-8 text-center">
+            <div className="relative mb-6">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-white/30 border-t-emerald-500 mx-auto"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
             </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Cargando personas</h3>
+            <p className="text-gray-700">Obteniendo información del sistema...</p>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Cargando personas</h3>
-          <p className="text-gray-500">Obteniendo información del sistema...</p>
         </div>
       </div>
     );
@@ -100,121 +107,120 @@ const ListaPersonas: React.FC<ListaPersonasProps> = ({
 
   if (personasFiltradas.length === 0 && !loading) {
     return (
-      <div className="space-y-8">
-        {/* Header con filtros - Versión mejorada */}
-        <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50/30 rounded-2xl shadow-xl border border-gray-100/50 backdrop-blur-sm">
-          <div className="p-8">
+      <div className="min-h-screen bg-gradient-to-br from-orange-400 to-purple-500 relative overflow-hidden p-8">
+        {/* Efectos de fondo */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-300/20 to-blue-500/20"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10 space-y-8">
+          {/* Header con filtros */}
+          <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 mb-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
               <div>
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
+                <h2 className="text-2xl font-light text-gray-900 mb-3">
                   Personas
                 </h2>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-700">
                   Gestiona la información de todas las personas registradas
                 </p>
               </div>
               
               {onNuevaPersona && (
-                <Button 
+                <button
                   onClick={onNuevaPersona}
-                  className="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 shadow-lg inline-flex items-center"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   Nueva Persona
-                </Button>
+                </button>
               )}
             </div>
 
-            {/* Filtros mejorados */}
+            {/* Filtros */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="relative group">
-                <Input
+              <div className="space-y-2">
+                <input
+                  type="text"
                   placeholder="Buscar por nombre, teléfono o email..."
                   value={filtros.busqueda || ''}
                   onChange={(e) => handleBusquedaChange(e.target.value)}
-                  fullWidth
-                  className="pl-12 border-2 border-gray-200 focus:border-primary-500 focus:ring-primary-500/20 rounded-xl transition-all duration-200"
+                  className="w-full bg-white/30 backdrop-blur-sm border border-white/50 rounded-xl text-gray-900 placeholder-gray-600 focus:ring-emerald-500 focus:border-transparent p-3 pl-10"
                 />
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
+                <svg className="w-5 h-5 text-gray-600 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </div>
               
               <div className="flex space-x-3">
-                <Select
-                  options={filtrosOptions}
+                <select
                   value={getCurrentFilter()}
                   onChange={(e) => handleFiltroChange(e.target.value)}
-                  placeholder="Filtrar personas..."
-                  fullWidth
-                  className="border-2 border-gray-200 focus:border-primary-500 rounded-xl"
-                />
+                  className="flex-1 bg-white/30 backdrop-blur-sm border border-white/50 rounded-xl text-gray-900 focus:ring-emerald-500 focus:border-transparent p-3"
+                >
+                  {filtrosOptions.map(option => (
+                    <option key={option.value} value={option.value} className="bg-white text-gray-900">
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 
-                <Button
-                  variant="secondary"
+                <button
                   onClick={clearFiltros}
                   disabled={!filtros.busqueda && filtros.conPrestamos === undefined}
-                  className="px-6 border-2 border-gray-200 hover:border-gray-300 rounded-xl transition-all duration-200"
+                  className="bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-gray-900 font-medium py-3 px-6 rounded-xl transition-all duration-200 disabled:opacity-50"
                 >
                   Limpiar
-                </Button>
+                </button>
               </div>
             </div>
 
-            {/* Estadísticas mejoradas */}
+            {/* Estadísticas */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-6 border border-gray-200/50 hover:shadow-lg transition-all duration-300">
+              <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-gray-400 to-gray-500 rounded-xl flex items-center justify-center shadow-lg">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                    </div>
+                    <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
                   </div>
-                  <div className="ml-6">
-                    <p className="text-sm font-medium text-gray-600 mb-1">Total personas</p>
-                    <p className="text-3xl font-bold text-gray-900">
+                  <div className="ml-4">
+                    <p className="text-sm text-gray-700 mb-1">Total personas</p>
+                    <p className="text-2xl font-medium text-gray-900">
                       {totalPersonas}
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 border border-blue-200/50 hover:shadow-lg hover:shadow-blue-100/50 transition-all duration-300">
+              <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
+                    <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   </div>
-                  <div className="ml-6">
-                    <p className="text-sm font-medium text-blue-700 mb-1">Con préstamos</p>
-                    <p className="text-3xl font-bold text-blue-900">
+                  <div className="ml-4">
+                    <p className="text-sm text-gray-700 mb-1">Con préstamos</p>
+                    <p className="text-2xl font-semibold text-emerald-600">
                       {personasConPrestamos.length}
                     </p>
                   </div>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-2xl p-6 border border-emerald-200/50 hover:shadow-lg hover:shadow-emerald-100/50 transition-all duration-300">
+              <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                      </svg>
-                    </div>
+                    <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
                   </div>
-                  <div className="ml-6">
-                    <p className="text-sm font-medium text-emerald-700 mb-1">Sin préstamos</p>
-                    <p className="text-3xl font-bold text-emerald-900">
+                  <div className="ml-4">
+                    <p className="text-sm text-gray-700 mb-1">Sin préstamos</p>
+                    <p className="text-2xl font-semibold text-orange-600">
                       {personasSinPrestamos.length}
                     </p>
                   </div>
@@ -222,161 +228,160 @@ const ListaPersonas: React.FC<ListaPersonasProps> = ({
               </div>
             </div>
           </div>
-        </div>
 
-        <EmptyState
-          title="No se encontraron personas"
-          description={
-            filtros.busqueda || filtros.conPrestamos !== undefined
-              ? 'No hay personas que coincidan con los filtros aplicados'
-              : 'No hay personas registradas. Crea la primera persona para comenzar.'
-          }
-          icon={
-            <svg className="w-20 h-20 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" 
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          }
-          action={
-            !filtros.busqueda && filtros.conPrestamos === undefined && onNuevaPersona ? {
-              label: 'Crear Primera Persona',
-              onClick: onNuevaPersona
-            } : filtros.busqueda || filtros.conPrestamos !== undefined ? {
-              label: 'Limpiar Filtros',
-              onClick: clearFiltros
-            } : undefined
-          }
-        />
+          <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6">
+            <EmptyState
+              title="No se encontraron personas"
+              description={
+                filtros.busqueda || filtros.conPrestamos !== undefined
+                  ? 'No hay personas que coincidan con los filtros aplicados'
+                  : 'No hay personas registradas. Crea la primera persona para comenzar.'
+              }
+              icon={
+                <svg className="w-20 h-20 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" 
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              }
+              action={
+                !filtros.busqueda && filtros.conPrestamos === undefined && onNuevaPersona ? {
+                  label: 'Crear Primera Persona',
+                  onClick: onNuevaPersona
+                } : filtros.busqueda || filtros.conPrestamos !== undefined ? {
+                  label: 'Limpiar Filtros',
+                  onClick: clearFiltros
+                } : undefined
+              }
+            />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header con filtros - Versión con personas */}
-      <div className="bg-gradient-to-br from-white via-gray-50 to-blue-50/30 rounded-2xl shadow-xl border border-gray-100/50 backdrop-blur-sm">
-        <div className="p-8">
+    <div className="min-h-screen bg-gradient-to-br from-orange-400 to-purple-500 relative overflow-hidden p-8">
+      {/* Efectos de fondo */}
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-300/20 to-blue-500/20"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl"></div>
+      
+      <div className="relative z-10 space-y-8">
+        {/* Header con filtros */}
+        <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 mb-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
             <div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
+              <h2 className="text-2xl font-light text-gray-900 mb-3">
                 Personas
               </h2>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-700">
                 Gestiona la información de todas las personas registradas
               </p>
             </div>
             
             <div className="flex items-center space-x-4">
-              <Badge 
-                variant="primary"
-                size="lg"
-                className="bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg px-4 py-2 text-sm font-semibold"
-              >
-                {personasFiltradas.length} {personasFiltradas.length === 1 ? 'persona' : 'personas'}
-              </Badge>
+              <div className="bg-white/30 backdrop-blur-sm rounded-xl p-3">
+                <span className="text-xs px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-gray-700 border border-white/30">
+                  {personasFiltradas.length} {personasFiltradas.length === 1 ? 'persona' : 'personas'}
+                </span>
+              </div>
               
               {onNuevaPersona && (
-                <Button 
+                <button
                   onClick={onNuevaPersona}
-                  className="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                  className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-400 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 shadow-lg inline-flex items-center"
                 >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   Nueva Persona
-                </Button>
+                </button>
               )}
             </div>
           </div>
 
-          {/* Filtros mejorados */}
+          {/* Filtros */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="relative group">
-              <Input
+            <div className="relative">
+              <input
+                type="text"
                 placeholder="Buscar por nombre, teléfono o email..."
                 value={filtros.busqueda || ''}
                 onChange={(e) => handleBusquedaChange(e.target.value)}
-                fullWidth
-                className="pl-12 border-2 border-gray-200 focus:border-primary-500 focus:ring-primary-500/20 rounded-xl transition-all duration-200"
+                className="w-full bg-white/30 backdrop-blur-sm border border-white/50 rounded-xl text-gray-900 placeholder-gray-600 focus:ring-emerald-500 focus:border-transparent p-3 pl-10"
               />
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="w-5 h-5 text-gray-400 group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
+              <svg className="w-5 h-5 text-gray-600 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
             
             <div className="flex space-x-3">
-              <Select
-                options={filtrosOptions}
+              <select
                 value={getCurrentFilter()}
                 onChange={(e) => handleFiltroChange(e.target.value)}
-                placeholder="Filtrar personas..."
-                fullWidth
-                className="border-2 border-gray-200 focus:border-primary-500 rounded-xl"
-              />
+                className="flex-1 bg-white/30 backdrop-blur-sm border border-white/50 rounded-xl text-gray-900 focus:ring-emerald-500 focus:border-transparent p-3"
+              >
+                {filtrosOptions.map(option => (
+                  <option key={option.value} value={option.value} className="bg-white text-gray-900">
+                    {option.label}
+                  </option>
+                ))}
+              </select>
               
-              <Button
-                variant="secondary"
+              <button
                 onClick={clearFiltros}
                 disabled={!filtros.busqueda && filtros.conPrestamos === undefined}
-                className="px-6 border-2 border-gray-200 hover:border-gray-300 rounded-xl transition-all duration-200 disabled:opacity-50"
+                className="bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 text-gray-900 font-medium py-3 px-6 rounded-xl transition-all duration-200 disabled:opacity-50"
               >
                 Limpiar
-              </Button>
+              </button>
             </div>
           </div>
 
-          {/* Estadísticas mejoradas */}
+          {/* Estadísticas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-6 border border-gray-200/50 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-gray-400 to-gray-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </div>
+                  <svg className="w-8 h-8 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
                 </div>
-                <div className="ml-6">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total personas</p>
-                  <p className="text-3xl font-bold text-gray-900">
+                <div className="ml-4">
+                  <p className="text-sm text-gray-700 mb-1">Total personas</p>
+                  <p className="text-2xl font-medium text-gray-900">
                     {totalPersonas}
                   </p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-6 border border-blue-200/50 hover:shadow-lg hover:shadow-blue-100/50 transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
+                  <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                 </div>
-                <div className="ml-6">
-                  <p className="text-sm font-medium text-blue-700 mb-1">Con préstamos</p>
-                  <p className="text-3xl font-bold text-blue-900">
+                <div className="ml-4">
+                  <p className="text-sm text-gray-700 mb-1">Con préstamos</p>
+                  <p className="text-2xl font-semibold text-emerald-600">
                     {personasConPrestamos.length}
                   </p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-2xl p-6 border border-emerald-200/50 hover:shadow-lg hover:shadow-emerald-100/50 transition-all duration-300 transform hover:-translate-y-1">
+            <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                  </div>
+                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
                 </div>
-                <div className="ml-6">
-                  <p className="text-sm font-medium text-emerald-700 mb-1">Sin préstamos</p>
-                  <p className="text-3xl font-bold text-emerald-900">
+                <div className="ml-4">
+                  <p className="text-sm text-gray-700 mb-1">Sin préstamos</p>
+                  <p className="text-2xl font-semibold text-orange-600">
                     {personasSinPrestamos.length}
                   </p>
                 </div>
@@ -384,31 +389,36 @@ const ListaPersonas: React.FC<ListaPersonasProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Lista de personas con diseño mejorado */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {personasFiltradas.map(persona => (
-          <PersonaCard
-            key={persona.id}
-            persona={persona}
-            onClick={onPersonaClick || (() => {})}
-          />
-        ))}
-      </div>
+        {/* Lista de personas */}
+        <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl overflow-hidden">
+          <div className="divide-y divide-white/20">
+            {personasFiltradas.map(persona => (
+              <div key={persona.id} className="hover:bg-white/10 transition-colors duration-200">
+                <PersonaCard
+                  persona={persona}
+                  onClick={onPersonaClick || (() => {})}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
 
-      {/* Loading indicator mejorado */}
-      {loading && personas.length > 0 && (
-        <div className="text-center py-8">
-          <div className="relative inline-block">
-            <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-primary-600 mx-auto"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-2 h-2 bg-primary-600 rounded-full animate-pulse"></div>
+        {/* Loading indicator */}
+        {loading && personas.length > 0 && (
+          <div className="text-center py-8">
+            <div className="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-6 inline-block">
+              <div className="relative inline-block mb-3">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-white/30 border-t-emerald-500 mx-auto"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                </div>
+              </div>
+              <p className="text-gray-700 font-medium">Cargando más personas...</p>
             </div>
           </div>
-          <p className="text-gray-500 mt-3 font-medium">Cargando más personas...</p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
