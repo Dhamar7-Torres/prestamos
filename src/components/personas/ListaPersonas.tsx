@@ -396,7 +396,7 @@ const ListaPersonas: React.FC<ListaPersonasProps> = ({
             {personasFiltradas.map(persona => (
               <div key={persona.id} className="hover:bg-white/10 transition-colors duration-200">
                 <PersonaCard
-                  persona={persona}
+                  persona={{ ...persona, activo: persona.activo ?? false }}
                   onClick={onPersonaClick || (() => {})}
                 />
               </div>
