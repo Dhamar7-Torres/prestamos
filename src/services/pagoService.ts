@@ -197,19 +197,6 @@ class PagoService {
       sanitized.prestamoId = Number(data.prestamoId);
     }
 
-    // Limpiar strings
-    if (data.descripcion) {
-      sanitized.descripcion = data.descripcion.trim();
-    }
-    if (data.numeroTransaccion) {
-      sanitized.numeroTransaccion = data.numeroTransaccion.trim();
-    }
-
-    // Convertir fechas
-    if (data.fechaProgramada && typeof data.fechaProgramada === 'string') {
-      sanitized.fechaProgramada = new Date(data.fechaProgramada).toISOString().split('T')[0];
-    }
-
     // Remover campos vacíos (excepto números que pueden ser 0)
     Object.keys(sanitized).forEach(key => {
       const value = sanitized[key];
@@ -259,16 +246,6 @@ class PagoService {
 
     if (data.numeroCuota !== undefined && data.numeroCuota <= 0) {
       errors.push('El número de cuota debe ser mayor a cero');
-    }
-
-    if (data.fechaProgramada) {
-      const fecha = new Date(data.fechaProgramada);
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-      
-      if (fecha < hoy) {
-        errors.push('La fecha programada no puede ser anterior a hoy');
-      }
     }
 
     const metodosValidos = ['efectivo', 'transferencia', 'tarjeta', 'cheque', 'otro'];

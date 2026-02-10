@@ -80,6 +80,26 @@ export interface Recordatorio {
   prestamo?: Prestamo;
 }
 
+// Interfaces que faltan en tu index.ts
+export interface HistorialCambiosData {
+  tablaAfectada: string;
+  registroId: number;
+  accion: string;
+  datosAnteriores?: any;
+  datosNuevos?: any;
+  usuario?: string;
+  timestampCambio?: string;
+}
+
+export interface PaginatedResponse<T> {
+  pagination: any;
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 // ✅ EXPORTAR la interface Persona que faltaba
 export interface Persona {
   id: number;
@@ -119,14 +139,12 @@ export interface ApiResponse<T> {
 
 export interface PaginatedResponse<T> {
   data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrev: boolean;
-  };
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext?: boolean;
+  hasPrev?: boolean;
 }
 
 export interface ApiError {

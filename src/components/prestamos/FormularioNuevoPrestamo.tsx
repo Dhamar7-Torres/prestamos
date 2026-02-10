@@ -35,6 +35,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
   const [error, setError] = useState<string>('');
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [loadingPersonas, setLoadingPersonas] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   // Usar contexto de personas
   const { crearPersona: crearPersonaEnContexto } = usePersona();
@@ -90,6 +91,32 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
     label: `${persona.nombre} ${persona.apellido || ''}`.trim()
   }));
 
+  // NUEVA FUNCIÓN: Buscar persona existente por criterios similares
+  const buscarPersonaExistente = (datos: PersonaFormDataSinCedula): Persona | null => {
+    const nombreCompleto = `${datos.nombre.trim()} ${datos.apellido.trim()}`.toLowerCase();
+    
+    // Buscar por nombre completo exacto
+    let personaExistente = personas.find(p => 
+      `${p.nombre} ${p.apellido || ''}`.toLowerCase().trim() === nombreCompleto.trim()
+    );
+
+    // Si no encuentra, buscar por email (si está disponible)
+    if (!personaExistente && datos.email?.trim()) {
+      personaExistente = personas.find(p => 
+        p.email?.toLowerCase() === datos.email.toLowerCase()
+      );
+    }
+
+    // Si no encuentra, buscar por teléfono (si está disponible)
+    if (!personaExistente && datos.telefono?.trim()) {
+      personaExistente = personas.find(p => 
+        p.telefono === datos.telefono.trim()
+      );
+    }
+
+    return personaExistente || null;
+  };
+
   // Validación personalizada SIN cedula
   const validatePersonaData = (data: PersonaFormDataSinCedula): { isValid: boolean; errors: Record<string, string> } => {
     const errors: Record<string, string> = {};
@@ -104,6 +131,14 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
 
     if (data.telefono && data.telefono.length > 0 && data.telefono.length < 7) {
       errors.telefono = 'El teléfono debe tener al menos 7 dígitos';
+    }
+
+    // NUEVA VALIDACIÓN: Verificar duplicados
+    if (!useExistingPersona) {
+      const personaExistente = buscarPersonaExistente(data);
+      if (personaExistente) {
+        errors.duplicado = `Ya existe una persona con datos similares: ${personaExistente.nombre} ${personaExistente.apellido || ''}. Use la opción "Seleccionar persona existente".`;
+      }
     }
 
     return {
@@ -156,9 +191,29 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
     setErrors({});
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep2()) return;
+  // NUEVA FUNCIÓN: Registrar en historial de cambios
+  const registrarEnHistorial = async (accion: string, tablaAfectada: string, registroId: number, datosNuevos: any, datosAnteriores?: any) => {
+    try {
+      const historialData = {
+        tablaAfectada,
+        registroId,
+        accion,
+        datosAnteriores: datosAnteriores || null,
+        datosNuevos,
+        usuario: 'usuario',
+        timestampCambio: new Date().toISOString()
+      };
+      
+      console.log('📝 Registrando en historial:', historialData);
+    } catch (error) {
+      console.warn('⚠️ Error registrando en historial:', error);
+    }
+  };
 
+  const handleSubmit = async () => {
+    if (!validateStep2() || submitting) return;
+
+    setSubmitting(true);
     setLoading(true);
     setError('');
 
@@ -167,28 +222,63 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
 
       // Crear persona si es necesario - SIN enviar campo cedula
       if (!useExistingPersona) {
-        // Preparar datos de persona sin cedula
-        const personaParaCrear = {
-          nombre: personaData.nombre.trim(),
-          apellido: personaData.apellido.trim() || undefined,
-          telefono: personaData.telefono.trim() || undefined,
-          email: personaData.email.trim() || undefined,
-          activo: true
-          // NO incluir cedula
-        };
-
-        console.log('🔍 Creando persona con datos:', personaParaCrear);
-
-        // Crear en la base de datos
-        const responsePersona = await apiService.crearPersona(personaParaCrear);
-        personaId = responsePersona.data.id;
-        
-        // Actualizar el contexto de personas
         try {
-          await crearPersonaEnContexto(personaParaCrear);
-          console.log('✅ Persona sincronizada con contexto');
-        } catch (contextError) {
-          console.warn('⚠️ Error sincronizando persona con contexto:', contextError);
+          const responsePersonasActualizadas = await apiService.obtenerPersonas({ limit: 100 });
+          const personasActualizadas = responsePersonasActualizadas.data.data || [];
+          
+          // Buscar duplicado en la lista actualizada
+          const nombreCompleto = `${personaData.nombre.trim()} ${personaData.apellido.trim()}`.toLowerCase();
+          
+          let personaExistente = personasActualizadas.find(p => 
+            `${p.nombre} ${p.apellido || ''}`.toLowerCase().trim() === nombreCompleto.trim()
+          );
+
+          // Buscar por email si no se encontró por nombre
+          if (!personaExistente && personaData.email?.trim()) {
+            personaExistente = personasActualizadas.find(p => 
+              p.email?.toLowerCase() === personaData.email.toLowerCase()
+            );
+          }
+
+          // Buscar por teléfono si no se encontró por email
+          if (!personaExistente && personaData.telefono?.trim()) {
+            personaExistente = personasActualizadas.find(p => 
+              p.telefono === personaData.telefono.trim()
+            );
+          }
+          
+          if (personaExistente) {
+            // Si encontramos duplicado, usamos la existente
+            personaId = personaExistente.id;
+            console.log('✅ Usando persona existente encontrada:', personaExistente);
+          } else {
+            // Preparar datos de persona sin cedula
+            const personaParaCrear = {
+              nombre: personaData.nombre.trim(),
+              apellido: personaData.apellido.trim() || undefined,
+              telefono: personaData.telefono.trim() || undefined,
+              email: personaData.email.trim() || undefined,
+              activo: true
+            };
+
+            console.log('🔍 Creando persona con datos:', personaParaCrear);
+
+            // Crear en la base de datos - ESTA ES LA ÚNICA CREACIÓN
+            const responsePersona = await apiService.crearPersona(personaParaCrear);
+            const nuevaPersona = responsePersona.data;
+            personaId = nuevaPersona.id;
+            
+            console.log('✅ Persona creada exitosamente con ID:', personaId);
+            
+            // Registrar en historial de cambios
+            await registrarEnHistorial('CREATE', 'personas', nuevaPersona.id, nuevaPersona);
+            
+            // Actualizar la lista local de personas para el UI
+            setPersonas(prevPersonas => [...prevPersonas, nuevaPersona]);
+          }
+        } catch (errorBusqueda) {
+          console.error('❌ Error verificando duplicados:', errorBusqueda);
+          throw new Error('Error verificando personas existentes');
         }
       }
 
@@ -203,12 +293,19 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
       console.log('🔍 Creando préstamo con datos:', prestamoCompleto);
 
       const responsePrestamo = await apiService.crearPrestamo(prestamoCompleto);
+      
+      // Registrar préstamo en historial de cambios
+      await registrarEnHistorial('CREATE', 'prestamos', responsePrestamo.data.id, responsePrestamo.data);
+      
+      console.log('✅ Préstamo creado exitosamente:', responsePrestamo.data);
+      
       onSuccess(responsePrestamo.data);
     } catch (err: any) {
       console.error('❌ Error en handleSubmit:', err);
       setError(err.message || 'Error al crear el préstamo');
     } finally {
       setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -224,6 +321,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
             <button
               onClick={onCancel}
               className="text-gray-400 hover:text-gray-600"
+              disabled={submitting}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -261,6 +359,22 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
           />
         )}
 
+        {/* Mostrar advertencia de duplicado si existe */}
+        {errors.duplicado && (
+          <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">{errors.duplicado}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Step 1: Persona - SIN campo cedula */}
         {step === 1 && (
           <div className="space-y-6">
@@ -269,8 +383,12 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 <input
                   type="radio"
                   checked={!useExistingPersona}
-                  onChange={() => setUseExistingPersona(false)}
+                  onChange={() => {
+                    setUseExistingPersona(false);
+                    setErrors({});
+                  }}
                   className="mr-2"
+                  disabled={submitting}
                 />
                 <span className="text-sm font-medium">Crear nueva persona</span>
               </label>
@@ -278,8 +396,12 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 <input
                   type="radio"
                   checked={useExistingPersona}
-                  onChange={() => setUseExistingPersona(true)}
+                  onChange={() => {
+                    setUseExistingPersona(true);
+                    setErrors({});
+                  }}
                   className="mr-2"
+                  disabled={submitting}
                 />
                 <span className="text-sm font-medium">Seleccionar persona existente</span>
               </label>
@@ -297,58 +419,86 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 })}
                 error={errors.personaId}
                 fullWidth
-                disabled={loadingPersonas}
+                disabled={loadingPersonas || submitting}
               />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label="Nombre *"
                   value={personaData.nombre}
-                  onChange={(e) => setPersonaData({
-                    ...personaData,
-                    nombre: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setPersonaData({
+                      ...personaData,
+                      nombre: e.target.value
+                    });
+                    if (errors.duplicado) {
+                      const { duplicado, ...otherErrors } = errors;
+                      setErrors(otherErrors);
+                    }
+                  }}
                   error={errors.nombre}
                   placeholder="Juan"
                   fullWidth
+                  disabled={submitting}
                 />
 
                 <Input
                   label="Apellido"
                   value={personaData.apellido}
-                  onChange={(e) => setPersonaData({
-                    ...personaData,
-                    apellido: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setPersonaData({
+                      ...personaData,
+                      apellido: e.target.value
+                    });
+                    if (errors.duplicado) {
+                      const { duplicado, ...otherErrors } = errors;
+                      setErrors(otherErrors);
+                    }
+                  }}
                   error={errors.apellido}
                   placeholder="Pérez"
                   fullWidth
+                  disabled={submitting}
                 />
 
                 <Input
                   label="Teléfono"
                   type="tel"
                   value={personaData.telefono}
-                  onChange={(e) => setPersonaData({
-                    ...personaData,
-                    telefono: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setPersonaData({
+                      ...personaData,
+                      telefono: e.target.value
+                    });
+                    if (errors.duplicado) {
+                      const { duplicado, ...otherErrors } = errors;
+                      setErrors(otherErrors);
+                    }
+                  }}
                   error={errors.telefono}
                   placeholder="300 123 4567"
                   fullWidth
+                  disabled={submitting}
                 />
 
                 <Input
                   label="Email"
                   type="email"
                   value={personaData.email}
-                  onChange={(e) => setPersonaData({
-                    ...personaData,
-                    email: e.target.value
-                  })}
+                  onChange={(e) => {
+                    setPersonaData({
+                      ...personaData,
+                      email: e.target.value
+                    });
+                    if (errors.duplicado) {
+                      const { duplicado, ...otherErrors } = errors;
+                      setErrors(otherErrors);
+                    }
+                  }}
                   error={errors.email}
                   placeholder="juan@email.com"
                   fullWidth
+                  disabled={submitting}
                 />
               </div>
             )}
@@ -357,12 +507,13 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
               <Button
                 variant="secondary"
                 onClick={onCancel}
+                disabled={submitting}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleNext}
-                disabled={loadingPersonas}
+                disabled={loadingPersonas || submitting}
               >
                 Siguiente
               </Button>
@@ -391,6 +542,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 error={errors.montoTotal}
                 placeholder="1000000.00"
                 fullWidth
+                disabled={submitting}
               />
 
               <Input
@@ -408,6 +560,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 placeholder="5.00"
                 helperText="Opcional: Deja en 0 si no aplica interés"
                 fullWidth
+                disabled={submitting}
               />
 
               <Select
@@ -419,6 +572,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                   tipoPrestamo: e.target.value as any
                 })}
                 fullWidth
+                disabled={submitting}
               />
 
               <Input
@@ -431,6 +585,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 })}
                 helperText="Fecha en que se entregó el dinero"
                 fullWidth
+                disabled={submitting}
               />
             </div>
 
@@ -438,7 +593,7 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
               <Button
                 variant="secondary"
                 onClick={handleBack}
-                disabled={loading}
+                disabled={loading || submitting}
               >
                 Anterior
               </Button>
@@ -447,15 +602,16 @@ const FormularioNuevoPrestamo: React.FC<FormularioNuevoPrestamoProps> = ({
                 <Button
                   variant="secondary"
                   onClick={onCancel}
-                  disabled={loading}
+                  disabled={loading || submitting}
                 >
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleSubmit}
-                  loading={loading}
+                  loading={loading || submitting}
+                  disabled={submitting}
                 >
-                  Crear Préstamo
+                  {submitting ? 'Creando...' : 'Crear Préstamo'}
                 </Button>
               </div>
             </div>

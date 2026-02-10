@@ -1,4 +1,5 @@
 import type { ApiResponse, PaginatedResponse } from '@/types';
+import type { HistorialCambiosData } from '@/types';
 
 const API_BASE_URL = '/api';
 
@@ -208,6 +209,25 @@ class ApiService {
   
   async healthCheck(): Promise<ApiResponse<any>> {
     return this.request('/health', { method: 'GET' });
+  }
+
+  // ====================================================
+  // Historial de Cambios
+  // ====================================================
+
+  async crearHistorialCambio(data: HistorialCambiosData): Promise<ApiResponse<any>> {
+    return this.request('/historial-cambios', {
+      method: 'POST',
+      body: data,
+    });
+  }
+
+  async obtenerHistorialCambios(params: Record<string, any> = {}): Promise<ApiResponse<PaginatedResponse<any>>> {
+    return this.request('/historial-cambios', { method: 'GET', params });
+  }
+
+  async obtenerHistorialPorTabla(tabla: string, registroId: number): Promise<ApiResponse<any[]>> {
+    return this.request(`/historial-cambios/${tabla}/${registroId}`, { method: 'GET' });
   }
 }
 

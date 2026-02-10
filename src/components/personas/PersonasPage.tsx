@@ -91,19 +91,6 @@ const PersonasPage: React.FC = () => {
                 </div>
               )}
               
-              {personaSeleccionada.direccion && (
-                <div className="md:col-span-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
-                  <label className="text-xs text-gray-700 mb-2 block">Dirección</label>
-                  <p className="text-sm font-medium text-gray-900">{personaSeleccionada.direccion}</p>
-                </div>
-              )}
-              
-              {personaSeleccionada.notas && (
-                <div className="md:col-span-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl p-4">
-                  <label className="text-xs text-gray-700 mb-2 block">Notas</label>
-                  <p className="text-sm font-medium text-gray-900">{personaSeleccionada.notas}</p>
-                </div>
-              )}
             </div>
             
             <div className="mt-6">

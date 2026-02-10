@@ -4,19 +4,27 @@ import { validate, validateParams, personaSchema, paramsSchema } from '../middle
 
 const router = express.Router();
 
+// Rutas específicas PRIMERO
+// GET /api/personas/:id/estadisticas - Obtener estadísticas de una persona
+router.get('/:id/estadisticas', 
+  validateParams(paramsSchema.id),
+  personasController.obtenerEstadisticas
+);
+
 // GET /api/personas - Obtener todas las personas
 router.get('/', personasController.obtenerTodas);
-
-// GET /api/personas/:id - Obtener persona por ID
-router.get('/:id', 
-  validateParams(paramsSchema.id),
-  personasController.obtenerPorId
-);
 
 // POST /api/personas - Crear nueva persona
 router.post('/', 
   validate(personaSchema.create),
   personasController.crear
+);
+
+// Rutas genéricas con parámetros AL FINAL
+// GET /api/personas/:id - Obtener persona por ID
+router.get('/:id', 
+  validateParams(paramsSchema.id),
+  personasController.obtenerPorId
 );
 
 // PUT /api/personas/:id - Actualizar persona
@@ -30,12 +38,6 @@ router.put('/:id',
 router.delete('/:id', 
   validateParams(paramsSchema.id),
   personasController.eliminar
-);
-
-// GET /api/personas/:id/estadisticas - Obtener estadísticas de una persona
-router.get('/:id/estadisticas', 
-  validateParams(paramsSchema.id),
-  personasController.obtenerEstadisticas
 );
 
 export default router;

@@ -152,20 +152,6 @@ class PersonaService {
     if (sanitized.telefono) {
       sanitized.telefono = sanitized.telefono.replace(/\s+/g, '');
     }
-    if (sanitized.cedula) {
-      sanitized.cedula = sanitized.cedula.replace(/\D/g, '');
-    }
-    if (sanitized.direccion) {
-      sanitized.direccion = sanitized.direccion.trim();
-    }
-    if (sanitized.notas) {
-      sanitized.notas = sanitized.notas.trim();
-    }
-
-    // Convertir fechas
-    if (sanitized.fechaNacimiento && typeof sanitized.fechaNacimiento === 'string') {
-      sanitized.fechaNacimiento = new Date(sanitized.fechaNacimiento).toISOString().split('T')[0];
-    }
 
     // Remover campos vacíos
     Object.keys(sanitized).forEach(key => {
@@ -193,17 +179,6 @@ class PersonaService {
       errors.push('Teléfono inválido');
     }
 
-    if (data.cedula && !/^[\d]{6,12}$/.test(data.cedula.replace(/\D/g, ''))) {
-      errors.push('Cédula inválida (debe tener entre 6 y 12 dígitos)');
-    }
-
-    if (data.fechaNacimiento) {
-      const fecha = new Date(data.fechaNacimiento);
-      if (fecha > new Date()) {
-        errors.push('La fecha de nacimiento no puede ser futura');
-      }
-    }
-
     return {
       isValid: errors.length === 0,
       errors
@@ -216,14 +191,12 @@ class PersonaService {
 
   formatPersonaParaMostrar(persona: Persona): Persona & { 
     nombreCompleto: string; 
-    iniciales: string; 
-    edad: number | null 
+    iniciales: string;
   } {
     return {
       ...persona,
       nombreCompleto: `${persona.nombre} ${persona.apellido || ''}`.trim(),
-      iniciales: this.obtenerIniciales(persona.nombre, persona.apellido),
-      edad: persona.fechaNacimiento ? this.calcularEdad(persona.fechaNacimiento) : null
+      iniciales: this.obtenerIniciales(persona.nombre, persona.apellido)
     };
   }
 
@@ -231,19 +204,6 @@ class PersonaService {
     const inicial1 = nombre ? nombre.charAt(0).toUpperCase() : '';
     const inicial2 = apellido ? apellido.charAt(0).toUpperCase() : '';
     return inicial1 + inicial2;
-  }
-
-  calcularEdad(fechaNacimiento: string): number {
-    const hoy = new Date();
-    const nacimiento = new Date(fechaNacimiento);
-    let edad = hoy.getFullYear() - nacimiento.getFullYear();
-    const m = hoy.getMonth() - nacimiento.getMonth();
-
-    if (m < 0 || (m === 0 && hoy.getDate() < nacimiento.getDate())) {
-      edad--;
-    }
-
-    return edad;
   }
 
   // ====================================================
@@ -276,7 +236,7 @@ class PersonaService {
 
     const headers = [
       'ID', 'Nombre', 'Apellido', 'Teléfono', 'Email', 
-      'Cédula', 'Fecha Nacimiento', 'Dirección', 'Activo', 'Fecha Creación'
+      'Dirección', 'Activo', 'Fecha Creación'
     ];
 
     const filas = personas.map(persona => [
@@ -285,8 +245,6 @@ class PersonaService {
       persona.apellido || '',
       persona.telefono || '',
       persona.email || '',
-      persona.cedula || '',
-      persona.fechaNacimiento || '',
       persona.direccion || '',
       persona.activo ? 'Sí' : 'No',
       new Date(persona.createdAt).toLocaleDateString()
